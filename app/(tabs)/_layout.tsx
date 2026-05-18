@@ -1,19 +1,19 @@
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { HapticTab } from '@/components/haptic-tab';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#3aaa35',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: '#FFC200',
+        tabBarInactiveTintColor: '#ccc',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: '#e0e0e0',
+          backgroundColor: '#3aaa35',
+          borderTopColor: '#2d8f2a',
         },
       }}>
       <Tabs.Screen
@@ -28,6 +28,13 @@ export default function TabLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="square.grid.2x2.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="form"
+        options={{
+          title: 'Form',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="doc.text.fill" color={color} />,
         }}
       />
     </Tabs>

@@ -1,7 +1,10 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function DashboardScreen() {
+  const router = useRouter();
+
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
@@ -18,7 +21,7 @@ export default function DashboardScreen() {
 
       {/* Two Big Buttons */}
       <View style={styles.bigButtonRow}>
-        <TouchableOpacity style={styles.bigButton}>
+        <TouchableOpacity style={styles.bigButton} onPress={() => router.push('/(tabs)/form')}>
           <Text style={styles.bigButtonText}>NEW MEMBERSHIP FORM</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bigButton}>
