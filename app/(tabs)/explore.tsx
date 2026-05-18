@@ -2,6 +2,15 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+const miniBoxes = [
+  { label: 'Contact Us', icon: 'phone.fill' },
+  { label: 'News', icon: 'newspaper.fill' },
+  { label: 'Benefits', icon: 'heart.fill' },
+  { label: 'Hospitals', icon: 'cross.fill' },
+  { label: 'Contributions', icon: 'creditcard.fill' },
+  { label: 'FAQs', icon: 'questionmark.circle.fill' },
+];
+
 export default function DashboardScreen() {
   const router = useRouter();
 
@@ -16,40 +25,39 @@ export default function DashboardScreen() {
 
       {/* Welcome Banner */}
       <View style={styles.banner}>
-        <Text style={styles.bannerText}>WELCOME TO YOUR PHILHEALTH PORTAL</Text>
+        <Text style={styles.bannerGreeting}>Welcome!</Text>
+        <Text style={styles.bannerText}>What would you like to do today?</Text>
       </View>
+
+      {/* Section Label */}
+      <Text style={styles.sectionLabel}>Membership Services</Text>
 
       {/* Two Big Buttons */}
       <View style={styles.bigButtonRow}>
         <TouchableOpacity style={styles.bigButton} onPress={() => router.push('/(tabs)/form')}>
-          <Text style={styles.bigButtonText}>NEW MEMBERSHIP FORM</Text>
+          <IconSymbol size={32} name="doc.text.fill" color="#3aaa35" />
+          <Text style={styles.bigButtonText}>NEW{'\n'}MEMBERSHIP{'\n'}FORM</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bigButton}>
-          <Text style={styles.bigButtonText}>REVALIDATION</Text>
+          <IconSymbol size={32} name="arrow.clockwise.circle.fill" color="#3aaa35" />
+          <Text style={styles.bigButtonText}>MEMBERSHIP{'\n'}REVALIDATION</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Section Label */}
+      <Text style={styles.sectionLabel}>Other Services</Text>
+
       {/* Mini Boxes */}
       <View style={styles.grid}>
-        <TouchableOpacity style={styles.miniBox}>
-          <Text style={styles.miniBoxText}>Contact Us</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.miniBox}>
-          <Text style={styles.miniBoxText}>News</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.miniBox}>
-          <Text style={styles.miniBoxText}>Benefits</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.miniBox}>
-          <Text style={styles.miniBoxText}>Hospitals</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.miniBox}>
-          <Text style={styles.miniBoxText}>Contributions</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.miniBox}>
-          <Text style={styles.miniBoxText}>FAQs</Text>
-        </TouchableOpacity>
+        {miniBoxes.map((box) => (
+          <TouchableOpacity key={box.label} style={styles.miniBox}>
+            <IconSymbol size={28} name={box.icon} color="#3aaa35" />
+            <Text style={styles.miniBoxText}>{box.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
+
+      <View style={{ height: 30 }} />
     </ScrollView>
   );
 }
@@ -57,7 +65,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f0f7f0',
   },
   header: {
     backgroundColor: '#3aaa35',
@@ -79,40 +87,65 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   banner: {
-    backgroundColor: '#e0f0e8',
+    backgroundColor: '#fff',
     padding: 20,
-    alignItems: 'center',
-    marginBottom: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  bannerGreeting: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
   },
   bannerText: {
     fontSize: 13,
-    color: '#006B3F',
-    fontWeight: '600',
-    textAlign: 'center',
+    color: '#888',
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#555',
+    marginHorizontal: 16,
+    marginTop: 20,
+    marginBottom: 10,
+    textTransform: 'uppercase',
     letterSpacing: 1,
   },
   bigButtonRow: {
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 16,
-    marginBottom: 16,
   },
   bigButton: {
     flex: 1,
     backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    height: 100,
+    borderWidth: 1.5,
+    borderColor: '#d4edd4',
+    borderRadius: 12,
+    height: 120,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 12,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
   },
   bigButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     color: '#333',
     textAlign: 'center',
+    lineHeight: 16,
   },
   grid: {
     flexDirection: 'row',
@@ -122,18 +155,24 @@ const styles = StyleSheet.create({
   },
   miniBox: {
     backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#d4edd4',
+    borderRadius: 12,
     width: '30%',
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   miniBoxText: {
-    fontSize: 11,
-    color: '#333',
+    fontSize: 10,
+    color: '#444',
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
