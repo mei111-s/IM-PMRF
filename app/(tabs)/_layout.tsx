@@ -1,7 +1,7 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Tabs } from 'expo-router';
+import React from 'react';
 
 export default function TabLayout() {
   return (
@@ -21,6 +21,7 @@ export default function TabLayout() {
         options={{
           title: 'Login',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="lock.fill" color={color} />,
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tabs.Screen
@@ -35,6 +36,13 @@ export default function TabLayout() {
         options={{
           title: 'Form',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="doc.text.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="revalidation"
+        options={{
+          title: 'Revalidation',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="arrow.clockwise.circle.fill" color={color} />,
         }}
       />
     </Tabs>

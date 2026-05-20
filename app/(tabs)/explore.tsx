@@ -38,7 +38,7 @@ export default function DashboardScreen() {
           <IconSymbol size={32} name="doc.text.fill" color="#3aaa35" />
           <Text style={styles.bigButtonText}>NEW{'\n'}MEMBERSHIP{'\n'}FORM</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bigButton}>
+        <TouchableOpacity style={styles.bigButton} onPress={() => router.push('/(tabs)/revalidation')}>
           <IconSymbol size={32} name="arrow.clockwise.circle.fill" color="#3aaa35" />
           <Text style={styles.bigButtonText}>MEMBERSHIP{'\n'}REVALIDATION</Text>
         </TouchableOpacity>
