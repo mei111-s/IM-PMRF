@@ -1,26 +1,38 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
-const MEMBER_DATA: Record<string, { name: string; email: string; mobile: string; address: string; civilStatus: string; profession: string }> = {
-  '0010-0123-0001': { name: 'Juan Dela Cruz', email: 'jdcruz@email.com', mobile: '9171234567', address: 'Intramuros, Manila', civilStatus: 'Married', profession: 'P001' },
-  '0010-0123-0002': { name: 'Maria Eleanor Reyes', email: 'mariaer@email.com', mobile: '9182345678', address: 'Mabalacat, Pampanga', civilStatus: 'Single', profession: 'P003' },
-  '0010-0123-0003': { name: 'Josephine Torre', email: 'josephinetorre@email.com', mobile: '9215678901', address: 'Pasig City', civilStatus: 'Married', profession: 'P001' },
-  '0010-0123-0004': { name: 'Christine Lim', email: 'clim@email.com', mobile: '9260123456', address: 'Intramuros, Manila', civilStatus: 'Widowed', profession: 'P004' },
-  '0010-0123-0005': { name: 'Mikko Santos', email: 'mikkosan@gmail.com', mobile: '9259012345', address: 'Bacoor, Cavite', civilStatus: 'Married', profession: 'P003' },
-  '0010-0123-0006': { name: 'Eduardo Pascua', email: 'peduardo@email.com', mobile: '9248901234', address: 'Santa Rosa, Laguna', civilStatus: 'Legally Separated', profession: 'P002' },
-  '0010-0123-0007': { name: 'Lily Fernandez', email: 'fernandezlily@email.com', mobile: '9237890123', address: 'Makati City', civilStatus: 'Single', profession: 'P005' },
-  '0010-0123-0008': { name: 'Carlo Mendoza', email: 'cmendoza@email.com', mobile: '9291122334', address: 'Quezon City', civilStatus: 'Married', profession: 'P001' },
-  '0010-0123-0009': { name: 'Angela Bautista', email: 'abautista@email.com', mobile: '9192233445', address: 'Davao City', civilStatus: 'Single', profession: 'P005' },
-  '0010-0123-0010': { name: 'Francis Villanueva', email: 'fvillanueva@email.com', mobile: '9203344556', address: 'Iloilo City', civilStatus: 'Married', profession: 'P002' },
+const MEMBER_DATA: Record<string, {
+  name: string;
+  spouseName: string;
+  civilStatus: string;
+  email: string;
+  mobile: string;
+  homePhone: string;
+  businessLine: string;
+  permanentAddress: string;
+  mailingAddress: string;
+  monthlyIncome: string;
+  professionID: string;
+}> = {
+  '0010-0123-0001': { name: 'Juan Dela Cruz', spouseName: 'Andrea Dela Cruz', civilStatus: 'Married', email: 'jdcruz@email.com', mobile: '9171234567', homePhone: '(047)222-1235', businessLine: 'N/A', permanentAddress: 'Intramuros, Manila', mailingAddress: 'SAME AS ABOVE', monthlyIncome: '25000', professionID: 'P001' },
+  '0010-0123-0002': { name: 'Maria Eleanor Reyes', spouseName: 'N/A', civilStatus: 'Single', email: 'mariaer@email.com', mobile: '9182345678', homePhone: 'N/A', businessLine: 'N/A', permanentAddress: 'Mabalacat, Pampanga', mailingAddress: 'Pedro Gil St., Manila', monthlyIncome: '18000', professionID: 'P003' },
+  '0010-0123-0003': { name: 'Josephine Torre', spouseName: 'Patrick Torre', civilStatus: 'Married', email: 'josephinetorre@email.com', mobile: '9215678901', homePhone: 'N/A', businessLine: 'N/A', permanentAddress: 'Pasig City', mailingAddress: 'SAME AS ABOVE', monthlyIncome: '25000', professionID: 'P001' },
+  '0010-0123-0004': { name: 'Christine Lim', spouseName: 'N/A', civilStatus: 'Widowed', email: 'clim@email.com', mobile: '9260123456', homePhone: 'N/A', businessLine: '(047)222-4568', permanentAddress: 'Intramuros, Manila', mailingAddress: 'SAME AS ABOVE', monthlyIncome: '45000', professionID: 'P004' },
+  '0010-0123-0005': { name: 'Mikko Santos', spouseName: 'Jennifer Santos', civilStatus: 'Married', email: 'mikkosan@gmail.com', mobile: '9259012345', homePhone: '(047)222-3457', businessLine: 'N/A', permanentAddress: 'Bacoor, Cavite', mailingAddress: 'Quirino Ave., Manila', monthlyIncome: '20000', professionID: 'P003' },
+  '0010-0123-0006': { name: 'Eduardo Pascua', spouseName: 'N/A', civilStatus: 'Legally Separated', email: 'peduardo@email.com', mobile: '9248901234', homePhone: 'N/A', businessLine: 'N/A', permanentAddress: 'Santa Rosa, Laguna', mailingAddress: 'SAME AS ABOVE', monthlyIncome: '28000', professionID: 'P002' },
+  '0010-0123-0007': { name: 'Lily Fernandez', spouseName: 'N/A', civilStatus: 'Single', email: 'fernandezlily@email.com', mobile: '9237890123', homePhone: 'N/A', businessLine: '(047)222-7891', permanentAddress: 'Makati City', mailingAddress: 'SAME AS ABOVE', monthlyIncome: '80000', professionID: 'P005' },
+  '0010-0123-0008': { name: 'Carlo Mendoza', spouseName: 'Angela Mendoza', civilStatus: 'Married', email: 'cmendoza@email.com', mobile: '9291122334', homePhone: 'N/A', businessLine: 'N/A', permanentAddress: 'Quezon City', mailingAddress: 'SAME AS ABOVE', monthlyIncome: '25000', professionID: 'P001' },
+  '0010-0123-0009': { name: 'Angela Bautista', spouseName: 'N/A', civilStatus: 'Single', email: 'abautista@email.com', mobile: '9192233445', homePhone: 'N/A', businessLine: 'N/A', permanentAddress: 'Davao City', mailingAddress: 'SAME AS ABOVE', monthlyIncome: '70000', professionID: 'P005' },
+  '0010-0123-0010': { name: 'Francis Villanueva', spouseName: 'Liza Villanueva', civilStatus: 'Married', email: 'fvillanueva@email.com', mobile: '9203344556', homePhone: '(033)222-3344', businessLine: 'N/A', permanentAddress: 'Iloilo City', mailingAddress: 'Pasig City', monthlyIncome: '40000', professionID: 'P002' },
 };
 
 const professions: Record<string, string> = {
@@ -37,10 +49,15 @@ export default function RevalidationScreen() {
   const [pin, setPin] = useState('');
   const [form, setForm] = useState({
     name: '',
+    spouseName: '',
+    civilStatus: '',
     email: '',
     mobile: '',
-    address: '',
-    civilStatus: '',
+    homePhone: '',
+    businessLine: '',
+    permanentAddress: '',
+    mailingAddress: '',
+    monthlyIncome: '',
     professionID: '',
   });
 
@@ -53,11 +70,16 @@ export default function RevalidationScreen() {
     if (member) {
       setForm({
         name: member.name,
+        spouseName: member.spouseName,
+        civilStatus: member.civilStatus,
         email: member.email,
         mobile: member.mobile,
-        address: member.address,
-        civilStatus: member.civilStatus,
-        professionID: member.profession,
+        homePhone: member.homePhone,
+        businessLine: member.businessLine,
+        permanentAddress: member.permanentAddress,
+        mailingAddress: member.mailingAddress,
+        monthlyIncome: member.monthlyIncome,
+        professionID: member.professionID,
       });
       setStep('edit');
     } else {
@@ -105,17 +127,22 @@ export default function RevalidationScreen() {
         </View>
       ) : (
         <View>
+          {/* PIN badge */}
           <View style={styles.infoCard}>
             <Text style={styles.infoLabel}>PIN</Text>
             <Text style={styles.infoValue}>{pin}</Text>
             <Text style={styles.infoNote}>Review and update your information below.</Text>
           </View>
 
+          {/* Section 1 - Personal */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Personal Information</Text>
 
             <Text style={styles.label}>Full Name</Text>
             <TextInput style={styles.input} value={form.name} onChangeText={v => update('name', v)} placeholderTextColor="#aaa" />
+
+            <Text style={styles.label}>Spouse Name</Text>
+            <TextInput style={styles.input} value={form.spouseName} onChangeText={v => update('spouseName', v)} placeholder="N/A if not applicable" placeholderTextColor="#aaa" />
 
             <Text style={styles.label}>Civil Status</Text>
             <View style={styles.optionRow}>
@@ -132,6 +159,18 @@ export default function RevalidationScreen() {
             </View>
           </View>
 
+          {/* Section 2 - Address */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Address</Text>
+
+            <Text style={styles.label}>Permanent Address</Text>
+            <TextInput style={styles.input} value={form.permanentAddress} onChangeText={v => update('permanentAddress', v)} placeholderTextColor="#aaa" />
+
+            <Text style={styles.label}>Mailing Address</Text>
+            <TextInput style={styles.input} value={form.mailingAddress} onChangeText={v => update('mailingAddress', v)} placeholder="Same as above or different" placeholderTextColor="#aaa" />
+          </View>
+
+          {/* Section 3 - Contact */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Contact Information</Text>
 
@@ -141,12 +180,19 @@ export default function RevalidationScreen() {
             <Text style={styles.label}>Mobile Number</Text>
             <TextInput style={styles.input} value={form.mobile} onChangeText={v => update('mobile', v)} keyboardType="phone-pad" placeholderTextColor="#aaa" />
 
-            <Text style={styles.label}>Permanent Address</Text>
-            <TextInput style={styles.input} value={form.address} onChangeText={v => update('address', v)} placeholderTextColor="#aaa" />
+            <Text style={styles.label}>Home Phone Number</Text>
+            <TextInput style={styles.input} value={form.homePhone} onChangeText={v => update('homePhone', v)} keyboardType="phone-pad" placeholder="N/A if not applicable" placeholderTextColor="#aaa" />
+
+            <Text style={styles.label}>Business Direct Line</Text>
+            <TextInput style={styles.input} value={form.businessLine} onChangeText={v => update('businessLine', v)} keyboardType="phone-pad" placeholder="N/A if not applicable" placeholderTextColor="#aaa" />
           </View>
 
+          {/* Section 4 - Employment */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Employment</Text>
+            <Text style={styles.sectionTitle}>Employment Information</Text>
+
+            <Text style={styles.label}>Monthly Income</Text>
+            <TextInput style={styles.input} value={form.monthlyIncome} onChangeText={v => update('monthlyIncome', v)} keyboardType="numeric" placeholderTextColor="#aaa" />
 
             <Text style={styles.label}>Member Type</Text>
             <View style={styles.optionRow}>

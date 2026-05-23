@@ -45,6 +45,33 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="arrow.clockwise.circle.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="contactus"
+        options={{
+          title: 'Contact Us',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="phone.fill" color={color} />,
+          tabBarStyle: { display: 'none' },
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="benefits"
+        options={{
+          title: 'Benefits',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="heart.fill" color={color} />,
+          tabBarStyle: { display: 'none' },
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="faqs"
+        options={{
+          title: 'FAQs',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="questionmark.circle.fill" color={color} />,
+          tabBarStyle: { display: 'none' },
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

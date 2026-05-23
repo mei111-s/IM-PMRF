@@ -43,6 +43,19 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fda678ae-cce1-4973-95c0-2c3f1a89429f"
+      }
+    },
+    "owner": "mei111",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/fda678ae-cce1-4973-95c0-2c3f1a89429f"
     }
   }
 }
