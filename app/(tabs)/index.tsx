@@ -1,22 +1,26 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Image,
+} from 'react-native';
 
 const VALID_PINS = [
-  '0010-0123-0001',
-  '0010-0123-0002',
-  '0010-0123-0003',
-  '0010-0123-0004',
-  '0010-0123-0005',
-  '0010-0123-0006',
-  '0010-0123-0007',
-  '0010-0123-0008',
-  '0010-0123-0009',
-  '0010-0123-0010',
+  '0010-0123-0001', '0010-0123-0002', '0010-0123-0003', '0010-0123-0004', '0010-0123-0005',
+  '0010-0123-0006', '0010-0123-0007', '0010-0123-0008', '0010-0123-0009', '0010-0123-0010',
 ];
 
 export default function LoginScreen() {
   const [pin, setPin] = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
   const router = useRouter();
 
   const handleLogin = () => {
@@ -28,53 +32,88 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+
       {/* Top green banner */}
       <View style={styles.topBanner}>
-        <Text style={styles.bannerTagline}>Your Partner in Health</Text>
+        <Text style={styles.bannerTagline}>Your Member in Health</Text>
       </View>
 
       {/* Main card */}
       <View style={styles.card}>
         {/* Logo row */}
-        <View style={styles.logoContainer}>
+        <View style={styles.logoRow}>
           <Image
             source={require('@/assets/images/philhealth_logo.png')}
             style={styles.logoImage}
           />
-          <View>
-            <Text style={styles.logoTitle}>PhilHealth</Text>
-            <Text style={styles.logoSubtitle}>MEMBERSHIP REGISTRATION</Text>
-          </View>
+          <Text style={styles.logoTitle}>PHILHEALTH</Text>
         </View>
 
-        <View style={styles.divider} />
-
-        <Text style={styles.label}>Enter your PhilHealth PIN</Text>
-        <Text style={styles.hint}>Your PIN was sent to your registered email address.</Text>
+        <Text style={styles.welcomeTitle}>Welcome!</Text>
+        <Text style={styles.welcomeSub}>Enter your 12 digits PhilHealth PIN.</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="0000-0000-0000"
+          placeholder="PhilHealth PIN"
           placeholderTextColor="#aaa"
           value={pin}
           onChangeText={setPin}
           autoCapitalize="none"
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="#aaa"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        <TouchableOpacity
+          style={styles.rememberRow}
+          onPress={() => setRemember(!remember)}>
+          <View style={[styles.checkbox, remember && styles.checkboxChecked]}>
+            {remember && <Text style={styles.checkMark}>✓</Text>}
+          </View>
+          <Text style={styles.rememberText}>Remember me</Text>
         </TouchableOpacity>
 
-        <Text style={styles.footerNote}>
-          Having trouble? Contact PhilHealth at{'\n'}
-          <Text style={styles.footerLink}>(02) 866-225-88</Text>
-        </Text>
+        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+          <Text style={styles.loginBtnText}>Login</Text>
+        </TouchableOpacity>
+
+        <View style={styles.linksRow}>
+          <TouchableOpacity>
+            <Text style={styles.linkText}>Forgot Password?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.linkText}>Create New Account</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.linksRow}>
+          <TouchableOpacity>
+            <Text style={styles.linkText}>PhilHealth Check</Text>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.linkTextGreen}>PhilHealth Membership{'\n'}Application</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Bottom banner */}
-      <View style={styles.bottomBanner}>
-        <Text style={styles.bottomText}>© 2025 Philippine Health Insurance Corporation</Text>
+      {/* Bottom */}
+      <View style={styles.bottomBar}>
+        <Text style={styles.bottomLabel}>Language:</Text>
+        <TouchableOpacity>
+          <Text style={styles.bottomLink}>Preferences</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.appVerRow}>
+        <Text style={styles.appVerText}>App ver something something</Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -88,112 +127,154 @@ const styles = StyleSheet.create({
   topBanner: {
     backgroundColor: '#3aaa35',
     paddingTop: 50,
-    paddingBottom: 50,
+    paddingBottom: 40,
     alignItems: 'center',
   },
   bannerTagline: {
     color: '#fff',
-    fontSize: 15,
+    fontSize: 14,
     fontStyle: 'italic',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   card: {
     backgroundColor: '#fff',
     marginHorizontal: 24,
-    marginTop: -24,
-    borderRadius: 16,
+    marginTop: -20,
+    borderRadius: 14,
     padding: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 4,
   },
-  logoContainer: {
+  logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 20,
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 18,
   },
   logoImage: {
-    width: 56,
-    height: 56,
+    width: 44,
+    height: 44,
     resizeMode: 'contain',
   },
   logoTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#3aaa35',
+    fontWeight: '900',
+    color: '#222',
+    letterSpacing: 2,
   },
-  logoSubtitle: {
-    fontSize: 10,
-    color: '#777',
-    letterSpacing: 1,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#eee',
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
+  welcomeTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#222',
+    textAlign: 'center',
     marginBottom: 4,
   },
-  hint: {
+  welcomeSub: {
     fontSize: 12,
     color: '#888',
-    marginBottom: 16,
+    textAlign: 'center',
+    marginBottom: 20,
   },
   input: {
-    borderWidth: 1.5,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    paddingHorizontal: 16,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: 14,
     color: '#333',
-    backgroundColor: '#fafafa',
-    marginBottom: 16,
-    letterSpacing: 1,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e8e8e8',
   },
-  button: {
-    backgroundColor: '#3aaa35',
-    paddingVertical: 14,
-    borderRadius: 10,
+  rememberRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    gap: 8,
+    marginBottom: 18,
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
+    borderRadius: 3,
+    borderWidth: 1.5,
+    borderColor: '#aaa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  checkboxChecked: {
+    backgroundColor: '#3aaa35',
+    borderColor: '#3aaa35',
+  },
+  checkMark: {
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  rememberText: {
+    fontSize: 13,
+    color: '#555',
+  },
+  loginBtn: {
+    backgroundColor: '#3aaa35',
+    paddingVertical: 13,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 18,
     shadowColor: '#3aaa35',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 4,
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  loginBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
     color: '#fff',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
-  footerNote: {
+  linksRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  linkText: {
     fontSize: 12,
-    color: '#aaa',
-    textAlign: 'center',
-    lineHeight: 18,
+    color: '#666',
+    textDecorationLine: 'underline',
   },
-  footerLink: {
+  linkTextGreen: {
+    fontSize: 12,
     color: '#3aaa35',
-    fontWeight: '600',
+    textDecorationLine: 'underline',
+    textAlign: 'right',
   },
-  bottomBanner: {
-    marginTop: 'auto',
-    backgroundColor: '#3aaa35',
-    padding: 16,
+  bottomBar: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: 6,
+    marginTop: 20,
   },
-  bottomText: {
-    color: '#fff',
+  bottomLabel: {
+    fontSize: 12,
+    color: '#888',
+  },
+  bottomLink: {
+    fontSize: 12,
+    color: '#3aaa35',
+    textDecorationLine: 'underline',
+  },
+  appVerRow: {
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  appVerText: {
     fontSize: 11,
+    color: '#bbb',
   },
 });
