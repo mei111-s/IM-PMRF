@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { authStore } from '@/stores/auth-store';
 import { useState } from 'react';
 import {
   Alert,
@@ -25,6 +26,7 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (VALID_PINS.includes(pin)) {
+      authStore.setPin(pin);
       router.push('/(tabs)/explore');
     } else {
       Alert.alert('Invalid PIN', 'Please check your PIN and try again.');
