@@ -108,7 +108,7 @@ export default function MembershipForm() {
 
   const handleBack = () => {
     if (step > 0) setStep(step - 1);
-    else router.back();
+    else router.push('/(tabs)/explore');
   };
 
   const handleSubmit = () => {

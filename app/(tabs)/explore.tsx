@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { authStore } from '@/stores/auth-store';
 import { MEMBERS, getProfessionLabel } from '@/stores/member-data';
 
@@ -75,12 +75,22 @@ export default function DashboardScreen() {
         {/* Icon Grid Row */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.iconRow} contentContainerStyle={styles.iconRowContent}>
           {membershipActions.map((item, i) => (
-            <TouchableOpacity key={i} style={styles.iconItem} onPress={item.onPress}>
-              <View style={styles.iconCircle}>
-                <MaterialCommunityIcons name={item.icon as any} size={26} color="#3aaa35" />
-              </View>
-              <Text style={styles.iconLabel}>{item.label}</Text>
-            </TouchableOpacity>
+            <Pressable
+              key={i}
+              style={({ pressed, hovered }: any) => [
+                styles.iconItem,
+                (pressed || hovered) && styles.iconItemHover,
+              ]}
+              onPress={item.onPress}>
+              {({ pressed, hovered }: any) => (
+                <>
+                  <View style={[styles.iconCircle, (pressed || hovered) && styles.iconCircleHover]}>
+                    <MaterialCommunityIcons name={item.icon as any} size={26} color="#3aaa35" />
+                  </View>
+                  <Text style={[styles.iconLabel, (pressed || hovered) && styles.iconLabelHover]}>{item.label}</Text>
+                </>
+              )}
+            </Pressable>
           ))}
         </ScrollView>
 
@@ -96,21 +106,27 @@ export default function DashboardScreen() {
         <View style={styles.sectionBlock}>
           <Text style={styles.sectionTitle}>MEMBERSHIP</Text>
           <View style={styles.memberGrid}>
-            <TouchableOpacity style={styles.memberBtn} onPress={() => router.push('/(tabs)/form')}>
-              <Text style={styles.memberBtnText}>New Membership{'\n'}Registration Form</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.memberBtn} onPress={() => router.push('/(tabs)/revalidation')}>
-              <Text style={styles.memberBtnText}>Update Membership{'\n'}Record</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.memberBtn} onPress={() => router.push('/(tabs)/revalidation')}>
-              <Text style={styles.memberBtnText}>View Membership{'\n'}Record</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.memberBtn}>
-              <Text style={styles.memberBtnText}>Online Payment</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.memberBtn}>
-              <Text style={styles.memberBtnText}>View or Print MDR</Text>
-            </TouchableOpacity>
+            {[
+              { label: 'New Membership\nRegistration Form', onPress: () => router.push('/(tabs)/form') },
+              { label: 'Update Membership\nRecord',         onPress: () => router.push('/(tabs)/revalidation') },
+              { label: 'View Membership\nRecord',           onPress: () => router.push('/(tabs)/revalidation') },
+              { label: 'Online Payment',                    onPress: () => {} },
+              { label: 'View or Print MDR',                 onPress: () => router.push('/(tabs)/revalidation') },
+            ].map((item, i) => (
+              <Pressable
+                key={i}
+                style={({ pressed, hovered }: any) => [
+                  styles.memberBtn,
+                  (pressed || hovered) && styles.memberBtnHover,
+                ]}
+                onPress={item.onPress}>
+                {({ pressed, hovered }: any) => (
+                  <Text style={[styles.memberBtnText, (pressed || hovered) && styles.memberBtnTextHover]}>
+                    {item.label}
+                  </Text>
+                )}
+              </Pressable>
+            ))}
           </View>
         </View>
 
@@ -138,13 +154,13 @@ export default function DashboardScreen() {
       {/* Bottom Nav */}
       <View style={styles.bottomNav}>
         {[
-          { icon: 'grid',    label: 'Menu',    active: true },
-          { icon: 'search',  label: 'Search' },
-          { icon: 'home',    label: 'Home' },
-          { icon: 'person',  label: 'Profile' },
-          { icon: 'mail',    label: 'Inbox' },
+          { icon: 'grid',    label: 'Menu',    active: true,  route: null },
+          { icon: 'search',  label: 'Search',  active: false, route: '/(tabs)/search' },
+          { icon: 'home',    label: 'Home',    active: false, route: '/(tabs)/explore' },
+          { icon: 'person',  label: 'Profile', active: false, route: '/(tabs)/profile' },
+          { icon: 'mail',    label: 'Inbox',   active: false, route: null },
         ].map((item, i) => (
-          <TouchableOpacity key={i} style={styles.navItem}>
+          <TouchableOpacity key={i} style={styles.navItem} onPress={item.route ? () => router.push(item.route as any) : undefined}>
             <Ionicons name={item.icon as any} size={22} color={item.active ? '#3aaa35' : '#aaa'} />
             <Text style={[styles.navLabel, item.active && styles.navLabelActive]}>{item.label}</Text>
           </TouchableOpacity>
@@ -183,6 +199,9 @@ const styles = StyleSheet.create({
   iconItem: { alignItems: 'center', width: 72 },
   iconCircle: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#f0f7f0', alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   iconLabel: { fontSize: 10, color: '#555', textAlign: 'center', lineHeight: 13, fontWeight: '500' },
+  iconItemHover: {},
+  iconCircleHover: { backgroundColor: '#d4edda', shadowColor: '#3aaa35', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6, elevation: 4 },
+  iconLabelHover: { color: '#3aaa35', fontWeight: '700' },
 
   heroBanner: { backgroundColor: '#3aaa35', marginHorizontal: 16, marginTop: 16, borderRadius: 14, height: 120, overflow: 'hidden' },
   heroBannerInner: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 20 },
@@ -192,7 +211,9 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 13, fontWeight: '800', color: '#333', letterSpacing: 1, marginBottom: 12 },
   memberGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   memberBtn: { backgroundColor: '#f4f4f4', borderRadius: 10, padding: 14, width: '47%', minHeight: 60, justifyContent: 'center' },
+  memberBtnHover: { backgroundColor: '#fff', shadowColor: '#3aaa35', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 8, elevation: 6 },
   memberBtnText: { fontSize: 12, color: '#444', fontWeight: '600', lineHeight: 17 },
+  memberBtnTextHover: { color: '#3aaa35', fontWeight: '800' },
 
   activityHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   viewAllText: { fontSize: 12, color: '#3aaa35', fontWeight: '600' },
