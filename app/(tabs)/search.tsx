@@ -12,14 +12,17 @@ const SERVICES = [
   { title: 'New Membership Registration Form', subtitle: 'Register as a new PhilHealth member', route: '/(tabs)/form' },
   { title: 'Update Membership Record',         subtitle: 'Update your existing membership info', route: '/(tabs)/revalidation' },
   { title: 'View Membership Record',           subtitle: 'View your submitted membership form', route: '/(tabs)/revalidation' },
+  { title: 'View or Print MDR',                subtitle: 'Download or print your Member Data Record', route: '/(tabs)/revalidation' },
   { title: 'Benefits',                         subtitle: 'View your PhilHealth benefit packages', route: '/(tabs)/benefits' },
-  { title: 'FAQs',                             subtitle: 'Frequently asked questions', route: '/(tabs)/faqs' },
-  { title: 'Contact Us',                       subtitle: 'Get in touch with PhilHealth', route: '/(tabs)/contactus' },
-  { title: 'View or Print MDR',                subtitle: 'Download or print your MDR', route: '/(tabs)/revalidation' },
+  { title: 'FAQs',                             subtitle: 'Frequently asked questions about PhilHealth', route: '/(tabs)/faqs' },
+  { title: 'Contact Us',                       subtitle: 'Get in touch with PhilHealth support', route: '/(tabs)/contactus' },
+  { title: 'Member Portal',                    subtitle: 'Access your records, contributions and MDR', route: '/(tabs)/revalidation' },
+  { title: 'Case Rates Search',                subtitle: 'Find PhilHealth benefit packages and case rates', route: '/(tabs)/benefits' },
+  { title: 'Accredited Hospitals',             subtitle: 'Find PhilHealth-accredited health facilities', route: '/(tabs)/contactus' },
 ];
 
 const QUICK_SEARCHES = [
-  'Benefits', 'Contributions', 'MDR', 'Membership', 'Dependents', 'Contact', 'FAQs', 'Revalidation',
+  'Benefits', 'MDR', 'Membership', 'Dependents', 'Contact', 'FAQs', 'Case Rates', 'Hospitals',
 ];
 
 export default function SearchScreen() {
@@ -186,9 +189,9 @@ export default function SearchScreen() {
         {[
           { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
           { icon: 'search',         label: 'Search',  route: null, active: true },
-          { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/explore' },
+          { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/home' },
           { icon: 'person-outline', label: 'Profile', route: '/(tabs)/profile' },
-          { icon: 'mail-outline',   label: 'Inbox',   route: null },
+          { icon: 'mail-outline',   label: 'Inbox',   route: '/(tabs)/inbox' },
         ].map((item, i) => (
           <TouchableOpacity key={i} style={styles.navItem} onPress={item.route ? () => router.push(item.route as any) : undefined}>
             <Ionicons name={item.icon as any} size={22} color={(item as any).active ? '#3aaa35' : '#aaa'} />

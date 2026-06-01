@@ -150,9 +150,9 @@ export default function ProfileScreen() {
         {[
           { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
           { icon: 'search-outline', label: 'Search',  route: null },
-          { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/explore' },
+          { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/home' },
           { icon: 'person',         label: 'Profile', route: null, active: true },
-          { icon: 'mail-outline',   label: 'Inbox',   route: null },
+          { icon: 'mail-outline',   label: 'Inbox',   route: '/(tabs)/inbox' },
         ].map((item, i) => (
           <TouchableOpacity
             key={i}

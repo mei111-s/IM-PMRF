@@ -46,6 +46,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="home"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarStyle: { display: 'none' },
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="inbox"
+        options={{
+          title: 'Inbox',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="envelope.fill" color={color} />,
+          tabBarStyle: { display: 'none' },
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="search"
         options={{
           title: 'Search',

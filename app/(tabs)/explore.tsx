@@ -16,12 +16,12 @@ export default function DashboardScreen() {
 
   const membershipActions = [
     { icon: 'file-document-edit-outline', label: 'New Membership\nRegistration Form', onPress: () => router.push('/(tabs)/form') },
-    { icon: 'account-edit-outline',       label: 'Member Hold\nEmployment Update',    onPress: () => {} },
-    { icon: 'file-replace-outline',       label: 'Electronic Group\nEnrollment/Update', onPress: () => {} },
-    { icon: 'heart-pulse',                label: 'Benefits',       onPress: () => router.push('/(tabs)/benefits' as any) },
-    { icon: 'credit-card-outline',        label: 'Contributions',  onPress: () => {} },
-    { icon: 'calculator-variant-outline', label: 'Calculator',     onPress: () => {} },
-    { icon: 'file-check-outline',         label: 'Accreditations', onPress: () => {} },
+    { icon: 'heart-pulse',                label: 'Benefits',             onPress: () => router.push('/(tabs)/benefits' as any) },
+    { icon: 'credit-card-outline',        label: 'Contributions',        onPress: () => {} },
+    { icon: 'card-account-details-outline', label: 'Member\nPortal',     onPress: () => router.push('/(tabs)/revalidation' as any) },
+    { icon: 'stethoscope',                label: 'Case Rates\nSearch',   onPress: () => {} },
+    { icon: 'hospital-marker',            label: 'Accredited\nHospitals',onPress: () => {} },
+    { icon: 'frequently-asked-questions', label: 'FAQs',                 onPress: () => router.push('/(tabs)/faqs' as any) },
   ];
 
   return (
@@ -156,9 +156,9 @@ export default function DashboardScreen() {
         {[
           { icon: 'grid',    label: 'Menu',    active: true,  route: null },
           { icon: 'search',  label: 'Search',  active: false, route: '/(tabs)/search' },
-          { icon: 'home',    label: 'Home',    active: false, route: '/(tabs)/explore' },
+          { icon: 'home',    label: 'Home',    active: false, route: '/(tabs)/home' },
           { icon: 'person',  label: 'Profile', active: false, route: '/(tabs)/profile' },
-          { icon: 'mail',    label: 'Inbox',   active: false, route: null },
+          { icon: 'mail',    label: 'Inbox',   active: false, route: '/(tabs)/inbox' },
         ].map((item, i) => (
           <TouchableOpacity key={i} style={styles.navItem} onPress={item.route ? () => router.push(item.route as any) : undefined}>
             <Ionicons name={item.icon as any} size={22} color={item.active ? '#3aaa35' : '#aaa'} />
