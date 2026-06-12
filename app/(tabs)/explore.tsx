@@ -1,10 +1,84 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from 'react-native';
+import { useState, useRef } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, Image, useWindowDimensions } from 'react-native';
 import { authStore } from '@/stores/auth-store';
 import { MEMBERS, getProfessionLabel } from '@/stores/member-data';
+
+// ── Image Carousel Component ──────────────────────────────────
+const BANNER_IMAGES = [
+  require('@/assets/images/slide_1.png'),
+  require('@/assets/images/slide_2.png'),
+  require('@/assets/images/slide_3.png'),
+  require('@/assets/images/slide_4.png'),
+  require('@/assets/images/slide_5.png'),
+  require('@/assets/images/slide_6.png'),
+  require('@/assets/images/slide_7.png'),
+  require('@/assets/images/slide_8.png'),
+  require('@/assets/images/slide_9.png'),
+  require('@/assets/images/slide_10.png'),
+];
+
+function ImageCarousel() {
+  const { width } = useWindowDimensions();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+  const itemWidth = width - 32; // minus margins
+
+  const goToPrev = () => {
+    const newIndex = currentIndex > 0 ? currentIndex - 1 : BANNER_IMAGES.length - 1;
+    setCurrentIndex(newIndex);
+    scrollRef.current?.scrollTo({ x: newIndex * itemWidth, animated: true });
+  };
+
+  const goToNext = () => {
+    const newIndex = currentIndex < BANNER_IMAGES.length - 1 ? currentIndex + 1 : 0;
+    setCurrentIndex(newIndex);
+    scrollRef.current?.scrollTo({ x: newIndex * itemWidth, animated: true });
+  };
+
+  const onMomentumScrollEnd = (e: any) => {
+    const index = Math.round(e.nativeEvent.contentOffset.x / itemWidth);
+    setCurrentIndex(Math.min(Math.max(index, 0), BANNER_IMAGES.length - 1));
+  };
+
+  return (
+    <View style={styles.carouselContainer}>
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        scrollEventThrottle={16}
+        decelerationRate="fast"
+        snapToInterval={itemWidth}
+        snapToAlignment="center">
+        {BANNER_IMAGES.map((img, i) => (
+          <Image key={i} source={img} style={[styles.carouselSlide, { width: itemWidth }]} />
+        ))}
+      </ScrollView>
+
+      {/* Arrow buttons */}
+      <View style={styles.carouselArrows} pointerEvents="box-none">
+        <TouchableOpacity style={styles.arrowBtn} onPress={goToPrev}>
+          <Text style={styles.arrowText}>‹</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.arrowBtn} onPress={goToNext}>
+          <Text style={styles.arrowText}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Pagination dots */}
+      <View style={styles.dotsRow}>
+        {BANNER_IMAGES.map((_, i) => (
+          <View key={i} style={i === currentIndex ? styles.dotActive : styles.dot} />
+        ))}
+      </View>
+    </View>
+  );
+}
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -156,19 +230,8 @@ export default function DashboardScreen() {
           ))}
         </ScrollView>
 
-        {/* Hero Banner — gradient */}
-        <LinearGradient
-          colors={['#3aaa35', '#7dc142', '#c8e04a']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.heroBanner}>
-          <View style={styles.heroBannerInner}>
-            <View style={styles.heroBannerBadge}>
-              <Text style={styles.heroBannerBadgeText}>Ika-31{'\n'}Anibersaryo{'\n'}ng PhilHealth</Text>
-            </View>
-            <Text style={styles.heroBannerText}>Naglilingkod{'\n'}para sa Bawat{'\n'}Pilipino</Text>
-          </View>
-        </LinearGradient>
+        {/* Hero Banner Carousel */}
+        <ImageCarousel />
 
         {/* Membership Form section */}
         <View style={styles.sectionBlock}>
@@ -338,11 +401,15 @@ const styles = StyleSheet.create({
   iconCircleHover: { backgroundColor: '#d4edda', shadowColor: '#3aaa35', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 6, elevation: 4 },
   iconLabelHover: { color: '#3aaa35', fontWeight: '700' },
 
-  heroBanner: { marginHorizontal: 16, marginTop: 16, borderRadius: 14, height: 120, overflow: 'hidden' },
-  heroBannerInner: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 20 },
-  heroBannerText: { fontSize: 16, fontWeight: '700', color: '#fff', lineHeight: 22 },
-  heroBannerBadge: { width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  heroBannerBadgeText: { fontSize: 11, fontWeight: '800', color: '#fff', textAlign: 'center', lineHeight: 16 },
+  // Carousel styles
+  carouselContainer: { marginHorizontal: 16, marginTop: 16, borderRadius: 14, overflow: 'hidden', backgroundColor: '#fff', borderWidth: 1, borderColor: '#eee' },
+  carouselSlide: { width: '100%', height: 180, resizeMode: 'cover' },
+  carouselArrows: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8 },
+  arrowBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(58,170,53,0.9)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
+  arrowText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  dotsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, paddingVertical: 10, backgroundColor: '#fff' },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#ddd' },
+  dotActive: { width: 20, height: 8, borderRadius: 4, backgroundColor: '#3aaa35' },
 
   sectionBlock: { marginHorizontal: 16, marginTop: 20, backgroundColor: '#fff', borderRadius: 14, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   sectionTitle: { fontSize: 13, fontWeight: '800', color: '#333', letterSpacing: 1, marginBottom: 12 },
