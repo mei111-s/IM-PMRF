@@ -138,28 +138,26 @@ export default function HomeScreen() {
           </View>
         ))}
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Bottom Nav — gradient */}
-      <LinearGradient
-        colors={['#3aaa35', '#7dc142', '#c8e04a']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.bottomNav}>
-        {[
-          { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
-          { icon: 'search-outline', label: 'Search',  route: '/(tabs)/search' },
-          { icon: 'home',           label: 'Home',    route: null, active: true },
-          { icon: 'person-outline', label: 'Profile', route: '/(tabs)/profile' },
-          { icon: 'mail-outline',   label: 'Inbox',   route: '/(tabs)/inbox' },
-        ].map((item, i) => (
-          <TouchableOpacity key={i} style={styles.navItem} onPress={item.route ? () => router.push(item.route as any) : undefined}>
-            <Ionicons name={item.icon as any} size={22} color={(item as any).active ? '#FFC200' : 'rgba(255,255,255,0.8)'} />
-            <Text style={[styles.navLabel, (item as any).active && styles.navLabelActive]}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </LinearGradient>
+      {/* Bottom Nav — compact rounded style */}
+      <View style={styles.bottomNavContainer}>
+        <View style={styles.bottomNav}>
+          {[
+            { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
+            { icon: 'search-outline', label: 'Search',  route: '/(tabs)/search' },
+            { icon: 'home',           label: 'Home',    route: null, active: true },
+            { icon: 'person-outline', label: 'Profile', route: '/(tabs)/profile' },
+            { icon: 'mail-outline',   label: 'Inbox',   route: '/(tabs)/inbox' },
+          ].map((item, i) => (
+            <TouchableOpacity key={i} style={[styles.navItem, (item as any).active && styles.navItemActive]} onPress={item.route ? () => router.push(item.route as any) : undefined}>
+              <Ionicons name={item.icon as any} size={20} color={(item as any).active ? '#fff' : '#888'} />
+              <Text style={[styles.navLabel, (item as any).active && styles.navLabelActive]}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
     </View>
   );
 }
@@ -201,8 +199,45 @@ const styles = StyleSheet.create({
   announcementTitle: { fontSize: 14, fontWeight: '700', color: '#222', marginBottom: 6 },
   announcementBody: { fontSize: 13, color: '#666', lineHeight: 20 },
 
-  bottomNav: { flexDirection: 'row', paddingBottom: 20, paddingTop: 10 },
-  navItem: { flex: 1, alignItems: 'center', gap: 3 },
-  navLabel: { fontSize: 10, color: 'rgba(255,255,255,0.7)' },
-  navLabelActive: { color: '#FFC200', fontWeight: '600' },
+  // Bottom Nav — compact rounded style
+  bottomNavContainer: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+    gap: 4,
+  },
+  navItem: { 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    minWidth: 52,
+  },
+  navItemActive: {
+    backgroundColor: '#3aaa35',
+  },
+  navLabel: { 
+    fontSize: 10, 
+    color: '#888',
+    marginTop: 2,
+  },
+  navLabelActive: { 
+    color: '#fff', 
+    fontWeight: '600',
+  },
 });

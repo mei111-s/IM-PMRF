@@ -69,15 +69,11 @@ export default function DashboardScreen() {
             ))}
 
             <View style={styles.drawerBottom}>
-              <LinearGradient
-                colors={['#3aaa35', '#7dc142', '#c8e04a']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.drawerViewMDR}>
-                <TouchableOpacity onPress={() => { setMenuOpen(false); router.push('/(tabs)/revalidation' as any); }}>
-                  <Text style={styles.drawerViewMDRText}>View Membership Record</Text>
-                </TouchableOpacity>
-              </LinearGradient>
+              <TouchableOpacity 
+                style={styles.drawerViewMDR}
+                onPress={() => { setMenuOpen(false); router.push('/(tabs)/revalidation' as any); }}>
+                <Text style={styles.drawerViewMDRText}>View Membership Record</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </TouchableOpacity>
@@ -217,28 +213,29 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Bottom Nav — gradient */}
-      <LinearGradient
-        colors={['#3aaa35', '#7dc142', '#c8e04a']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.bottomNav}>
-        {[
-          { icon: 'grid',    label: 'Menu',    active: true,  route: null },
-          { icon: 'search',  label: 'Search',  active: false, route: '/(tabs)/search' },
-          { icon: 'home',    label: 'Home',    active: false, route: '/(tabs)/home' },
-          { icon: 'person',  label: 'Profile', active: false, route: '/(tabs)/profile' },
-          { icon: 'mail',    label: 'Inbox',   active: false, route: '/(tabs)/inbox' },
-        ].map((item, i) => (
-          <TouchableOpacity key={i} style={styles.navItem} onPress={item.route ? () => router.push(item.route as any) : () => setMenuOpen(true)}>
-            <Ionicons name={item.icon as any} size={22} color={item.active ? '#FFC200' : 'rgba(255,255,255,0.8)'} />
-            <Text style={[styles.navLabel, item.active && styles.navLabelActive]}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </LinearGradient>
+      {/* Bottom Nav — compact rounded style matching pic 2 */}
+      <View style={styles.bottomNavContainer}>
+        <View style={styles.bottomNav}>
+          {[
+            { icon: 'grid',    label: 'Menu',    active: true,  route: null },
+            { icon: 'search',  label: 'Search',  active: false, route: '/(tabs)/search' },
+            { icon: 'home',    label: 'Home',    active: false, route: '/(tabs)/home' },
+            { icon: 'person',  label: 'Profile', active: false, route: '/(tabs)/profile' },
+            { icon: 'mail',    label: 'Inbox',   active: false, route: '/(tabs)/inbox' },
+          ].map((item, i) => (
+            <TouchableOpacity 
+              key={i} 
+              style={[styles.navItem, item.active && styles.navItemActive]} 
+              onPress={item.route ? () => router.push(item.route as any) : () => setMenuOpen(true)}>
+              <Ionicons name={item.icon as any} size={20} color={item.active ? '#fff' : '#888'} />
+              <Text style={[styles.navLabel, item.active && styles.navLabelActive]}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
     </View>
   );
 }
@@ -247,20 +244,69 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fafafa' },
   container: { flex: 1 },
 
-  // Drawer
-  drawerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', flexDirection: 'row' },
-  drawer: { width: 280, backgroundColor: '#fff', paddingTop: 50 },
-  drawerUserStrip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, gap: 12 },
-  drawerAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
+  // Drawer — updated to match pic 4 (floating card style)
+  drawerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', flexDirection: 'row' },
+  drawer: { 
+    width: 260, 
+    backgroundColor: '#fff', 
+    marginTop: 60,
+    marginLeft: 12,
+    marginBottom: 20,
+    borderRadius: 16,
+    paddingTop: 0,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  drawerUserStrip: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 16, 
+    paddingVertical: 16, 
+    gap: 12,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  drawerAvatar: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: 'rgba(255,255,255,0.25)', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    borderWidth: 2, 
+    borderColor: 'rgba(255,255,255,0.5)' 
+  },
   drawerAvatarText: { fontSize: 16, fontWeight: '800', color: '#fff' },
   drawerUserInfo: { flex: 1 },
   drawerUserName: { fontSize: 14, fontWeight: '700', color: '#fff' },
   drawerUserPin: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 1 },
   drawerDivider: { height: 1, backgroundColor: '#f0f0f0', marginVertical: 8 },
-  drawerItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 14 },
+  drawerItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 14, 
+    paddingHorizontal: 16, 
+    paddingVertical: 12,
+    marginHorizontal: 8,
+    borderRadius: 8,
+  },
   drawerItemText: { fontSize: 14, color: '#333', fontWeight: '500' },
-  drawerBottom: { marginTop: 'auto', padding: 20, borderTopWidth: 1, borderTopColor: '#f0f0f0' },
-  drawerViewMDR: { borderRadius: 8, paddingVertical: 12, alignItems: 'center' },
+  drawerBottom: { 
+    marginTop: 'auto', 
+    padding: 12, 
+    borderTopWidth: 1, 
+    borderTopColor: '#f0f0f0' 
+  },
+  drawerViewMDR: { 
+    borderRadius: 10, 
+    paddingVertical: 12, 
+    alignItems: 'center',
+    backgroundColor: '#3aaa35',
+  },
   drawerViewMDRText: { fontSize: 13, color: '#fff', fontWeight: '700' },
 
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 52, paddingBottom: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
@@ -317,8 +363,45 @@ const styles = StyleSheet.create({
   purposeBadgeAmend: { backgroundColor: '#fff8e1' },
   purposeBadgeText: { fontSize: 11, color: '#3aaa35', fontWeight: '700' },
 
-  bottomNav: { flexDirection: 'row', paddingBottom: 20, paddingTop: 10 },
-  navItem: { flex: 1, alignItems: 'center', gap: 3 },
-  navLabel: { fontSize: 10, color: 'rgba(255,255,255,0.7)' },
-  navLabelActive: { color: '#FFC200', fontWeight: '600' },
+  // Bottom Nav — compact rounded style matching pic 2
+  bottomNavContainer: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+    gap: 4,
+  },
+  navItem: { 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    minWidth: 52,
+  },
+  navItemActive: {
+    backgroundColor: '#3aaa35',
+  },
+  navLabel: { 
+    fontSize: 10, 
+    color: '#888',
+    marginTop: 2,
+  },
+  navLabelActive: { 
+    color: '#fff', 
+    fontWeight: '600',
+  },
 });
