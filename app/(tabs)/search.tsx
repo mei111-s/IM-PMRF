@@ -181,23 +181,25 @@ export default function SearchScreen() {
           </>
         )}
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Bottom Nav */}
-      <View style={styles.bottomNav}>
-        {[
-          { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
-          { icon: 'search',         label: 'Search',  route: null, active: true },
-          { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/home' },
-          { icon: 'person-outline', label: 'Profile', route: '/(tabs)/profile' },
-          { icon: 'mail-outline',   label: 'Inbox',   route: '/(tabs)/inbox' },
-        ].map((item, i) => (
-          <TouchableOpacity key={i} style={styles.navItem} onPress={item.route ? () => router.push(item.route as any) : undefined}>
-            <Ionicons name={item.icon as any} size={22} color={(item as any).active ? '#FFC200' : 'rgba(255,255,255,0.6)'} />
-            <Text style={[styles.navLabel, (item as any).active && styles.navLabelActive]}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
+      {/* Bottom Nav — compact rounded style */}
+      <View style={styles.bottomNavContainer}>
+        <View style={styles.bottomNav}>
+          {[
+            { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
+            { icon: 'search',         label: 'Search',  route: null, active: true },
+            { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/home' },
+            { icon: 'person-outline', label: 'Profile', route: '/(tabs)/profile' },
+            { icon: 'mail-outline',   label: 'Inbox',   route: '/(tabs)/inbox' },
+          ].map((item, i) => (
+            <TouchableOpacity key={i} style={[styles.navItem, (item as any).active && styles.navItemActive]} onPress={item.route ? () => router.push(item.route as any) : undefined}>
+              <Ionicons name={item.icon as any} size={20} color={(item as any).active ? '#fff' : '#888'} />
+              <Text style={[styles.navLabel, (item as any).active && styles.navLabelActive]}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -237,8 +239,45 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#ccc', marginTop: 16, textAlign: 'center' },
   emptySubtitle: { fontSize: 13, color: '#bbb', marginTop: 8, textAlign: 'center', lineHeight: 20 },
 
-  bottomNav: { flexDirection: 'row', backgroundColor: '#3aaa35', borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingBottom: 20, paddingTop: 10 },
-  navItem: { flex: 1, alignItems: 'center', gap: 3 },
-  navLabel: { fontSize: 10, color: 'rgba(255,255,255,0.6)' },
-  navLabelActive: { color: '#FFC200', fontWeight: '600' },
+  // Bottom Nav — compact rounded style
+  bottomNavContainer: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+    gap: 4,
+  },
+  navItem: { 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    minWidth: 52,
+  },
+  navItemActive: {
+    backgroundColor: '#3aaa35',
+  },
+  navLabel: { 
+    fontSize: 10, 
+    color: '#888',
+    marginTop: 2,
+  },
+  navLabelActive: { 
+    color: '#fff', 
+    fontWeight: '600',
+  },
 });
