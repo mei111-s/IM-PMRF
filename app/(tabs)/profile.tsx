@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { authStore } from '@/stores/auth-store';
 import { MEMBERS, getDependentsByPin, getProfessionLabel } from '@/stores/member-data';
 
@@ -12,12 +13,6 @@ export default function ProfileScreen() {
   const dependents = getDependentsByPin(pin);
   const [activeTab, setActiveTab] = useState<'personal' | 'settings'>('personal');
 
-  const initials = member?.memberName
-    .split(' ')
-    .map(w => w[0])
-    .slice(0, 2)
-    .join('') ?? '?';
-
   const dobFormatted = member?.dateOfBirth
     ? new Date(member.dateOfBirth).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
     : '—';
@@ -27,26 +22,32 @@ export default function ProfileScreen() {
       {/* Header bar */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
-          <Ionicons name="chevron-back" size={22} color="#333" />
+          <Ionicons name="menu" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Profile</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/inbox' as any)}>
           <Ionicons name="notifications-outline" size={22} color="#333" />
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Green banner */}
-        <View style={styles.banner}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>{initials}</Text>
+        {/* Green → Yellow gradient banner matching Figma */}
+        <LinearGradient
+          colors={['#2d8f2a', '#3aaa35', '#7dc142', '#c8e04a']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.banner}>
+          <View style={styles.avatarOuter}>
+            <View style={styles.avatarCircle}>
+              <Ionicons name="person" size={40} color="rgba(255,255,255,0.7)" />
+            </View>
           </View>
           <Text style={styles.bannerName}>{member?.memberName ?? '—'}</Text>
           <View style={styles.bannerEmailRow}>
             <Text style={styles.bannerEmail}>{member?.emailAddress ?? '—'}</Text>
             <Ionicons name="pencil-outline" size={13} color="rgba(255,255,255,0.8)" style={{ marginLeft: 4 }} />
           </View>
-          <View style={styles.bannerMeta}>
+          <View style={styles.bannerMetaRow}>
             <Text style={styles.bannerMetaText}>PhilHealth Member</Text>
             <Text style={styles.bannerMetaDot}>  ·  </Text>
             <Text style={styles.bannerMetaText}>{member?.permanentAddress ?? '—'}</Text>
@@ -54,7 +55,7 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.editProfileBtn}>
             <Text style={styles.editProfileText}>Edit Profile</Text>
           </TouchableOpacity>
-        </View>
+        </LinearGradient>
 
         {/* Tabs */}
         <View style={styles.tabRow}>
@@ -105,7 +106,7 @@ export default function ProfileScreen() {
                     <Text style={styles.depDetail}>Citizenship: {dep.dependentCitizenship}</Text>
                     {dep.dependentPermanentDisability === 'Yes' && (
                       <View style={styles.disabilityBadge}>
-                        <Text style={styles.disabilityText}>Permanent Disability</Text>
+                        <Text style={styles.disabilityText}>With Permanent Disability</Text>
                       </View>
                     )}
                   </View>
@@ -119,24 +120,24 @@ export default function ProfileScreen() {
         {activeTab === 'settings' && (
           <View style={styles.infoSection}>
             {[
-              { icon: 'lock-closed-outline', label: 'Change Password' },
-              { icon: 'notifications-outline', label: 'Notification Preferences' },
-              { icon: 'language-outline', label: 'Language' },
-              { icon: 'shield-checkmark-outline', label: 'Privacy & Security' },
-              { icon: 'help-circle-outline', label: 'Help & Support' },
-              { icon: 'log-out-outline', label: 'Logout', danger: true },
+              { icon: 'lock-closed-outline',      label: 'Change Password' },
+              { icon: 'shield-checkmark-outline',  label: 'Privacy & Security' },
+              { icon: 'notifications-outline',     label: 'Notification preferences' },
+              { icon: 'help-circle-outline',       label: 'Help & Support' },
+              { icon: 'language-outline',          label: 'Language' },
+              { icon: 'log-out-outline',           label: 'Logout', danger: true },
             ].map((item, i) => (
               <TouchableOpacity
                 key={i}
                 style={styles.settingsRow}
-                onPress={item.label === 'Logout' ? () => router.push('/(tabs)') : undefined}>
-                <View style={[styles.settingsIcon, item.danger && styles.settingsIconDanger]}>
-                  <Ionicons name={item.icon as any} size={18} color={item.danger ? '#e53935' : '#3aaa35'} />
+                onPress={item.label === 'Logout' ? () => router.push('/(tabs)' as any) : undefined}>
+                <View style={[styles.settingsIcon, (item as any).danger && styles.settingsIconDanger]}>
+                  <Ionicons name={item.icon as any} size={18} color={(item as any).danger ? '#e53935' : '#555'} />
                 </View>
-                <Text style={[styles.settingsLabel, item.danger && styles.settingsLabelDanger]}>
+                <Text style={[styles.settingsLabel, (item as any).danger && styles.settingsLabelDanger]}>
                   {item.label}
                 </Text>
-                {!item.danger && <Ionicons name="chevron-forward" size={16} color="#ccc" />}
+                <Ionicons name="chevron-forward" size={16} color="#ccc" />
               </TouchableOpacity>
             ))}
           </View>
@@ -145,11 +146,15 @@ export default function ProfileScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Bottom Nav */}
-      <View style={styles.bottomNav}>
+      {/* Bottom Nav — gradient */}
+      <LinearGradient
+        colors={['#3aaa35', '#7dc142', '#c8e04a']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.bottomNav}>
         {[
           { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
-          { icon: 'search-outline', label: 'Search',  route: null },
+          { icon: 'search-outline', label: 'Search',  route: '/(tabs)/search' },
           { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/home' },
           { icon: 'person',         label: 'Profile', route: null, active: true },
           { icon: 'mail-outline',   label: 'Inbox',   route: '/(tabs)/inbox' },
@@ -158,11 +163,11 @@ export default function ProfileScreen() {
             key={i}
             style={styles.navItem}
             onPress={item.route ? () => router.push(item.route as any) : undefined}>
-            <Ionicons name={item.icon as any} size={22} color={item.active ? '#3aaa35' : '#aaa'} />
-            <Text style={[styles.navLabel, item.active && styles.navLabelActive]}>{item.label}</Text>
+            <Ionicons name={item.icon as any} size={22} color={(item as any).active ? '#FFC200' : 'rgba(255,255,255,0.8)'} />
+            <Text style={[styles.navLabel, (item as any).active && styles.navLabelActive]}>{item.label}</Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </LinearGradient>
     </View>
   );
 }
@@ -177,7 +182,7 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f9f9f9' },
+  root: { flex: 1, backgroundColor: '#f5f5f5' },
   scroll: { flex: 1 },
 
   topBar: {
@@ -187,34 +192,35 @@ const styles = StyleSheet.create({
   },
   topBarTitle: { fontSize: 16, fontWeight: '700', color: '#333' },
 
-  // Banner
   banner: {
-    backgroundColor: '#3aaa35',
-    paddingTop: 28, paddingBottom: 24, paddingHorizontal: 20,
+    paddingTop: 28, paddingBottom: 28, paddingHorizontal: 20,
     alignItems: 'center', gap: 6,
+  },
+  avatarOuter: {
+    width: 90, height: 90, borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 8,
   },
   avatarCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 8,
-    borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)',
   },
-  avatarText: { fontSize: 28, fontWeight: '800', color: '#fff' },
-  bannerName: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  bannerName: { fontSize: 24, fontWeight: '800', color: '#fff' },
   bannerEmailRow: { flexDirection: 'row', alignItems: 'center' },
-  bannerEmail: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
-  bannerMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  bannerMetaText: { fontSize: 12, color: 'rgba(255,255,255,0.75)' },
+  bannerEmail: { fontSize: 13, color: 'rgba(255,255,255,0.9)' },
+  bannerMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2, flexWrap: 'wrap', justifyContent: 'center' },
+  bannerMetaText: { fontSize: 12, color: 'rgba(255,255,255,0.85)' },
   bannerMetaDot: { fontSize: 12, color: 'rgba(255,255,255,0.5)' },
   editProfileBtn: {
-    marginTop: 10, paddingHorizontal: 24, paddingVertical: 8,
-    borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+    marginTop: 12, paddingHorizontal: 28, paddingVertical: 9,
+    borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)',
   },
   editProfileText: { fontSize: 13, color: '#fff', fontWeight: '600' },
 
-  // Tabs
   tabRow: {
     flexDirection: 'row', backgroundColor: '#fff',
     borderBottomWidth: 1, borderBottomColor: '#eee',
@@ -227,7 +233,6 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 14, color: '#aaa', fontWeight: '600' },
   tabTextActive: { color: '#3aaa35' },
 
-  // Info rows
   infoSection: { paddingHorizontal: 16, paddingTop: 8 },
   infoRow: {
     backgroundColor: '#fff', borderRadius: 10,
@@ -237,7 +242,6 @@ const styles = StyleSheet.create({
   infoLabel: { fontSize: 11, color: '#aaa', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
   infoValue: { fontSize: 15, color: '#222', fontWeight: '500' },
 
-  // Dependents
   depHeading: { fontSize: 13, fontWeight: '800', color: '#333', marginTop: 20, marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' },
   depCard: {
     backgroundColor: '#fff', borderRadius: 10,
@@ -252,7 +256,6 @@ const styles = StyleSheet.create({
   },
   disabilityText: { fontSize: 11, color: '#e65100', fontWeight: '600' },
 
-  // Settings
   settingsRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: '#fff', borderRadius: 10,
@@ -260,19 +263,17 @@ const styles = StyleSheet.create({
   },
   settingsIcon: {
     width: 34, height: 34, borderRadius: 10,
-    backgroundColor: '#e8f5e9', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#f0f0f0', alignItems: 'center', justifyContent: 'center',
   },
   settingsIconDanger: { backgroundColor: '#fff0f0' },
   settingsLabel: { flex: 1, fontSize: 14, color: '#333', fontWeight: '500' },
   settingsLabelDanger: { color: '#e53935' },
 
-  // Bottom nav
   bottomNav: {
-    flexDirection: 'row', backgroundColor: '#fff',
-    borderTopWidth: 1, borderTopColor: '#f0f0f0',
+    flexDirection: 'row',
     paddingBottom: 20, paddingTop: 10,
   },
   navItem: { flex: 1, alignItems: 'center', gap: 3 },
-  navLabel: { fontSize: 10, color: '#aaa' },
-  navLabelActive: { color: '#3aaa35', fontWeight: '600' },
+  navLabel: { fontSize: 10, color: 'rgba(255,255,255,0.7)' },
+  navLabelActive: { color: '#FFC200', fontWeight: '600' },
 });

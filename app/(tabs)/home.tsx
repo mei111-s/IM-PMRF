@@ -1,8 +1,9 @@
-import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { authStore } from '@/stores/auth-store';
 import { MEMBERS, getDependentsByPin, getProfessionLabel } from '@/stores/member-data';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const ANNOUNCEMENTS = [
   {
@@ -57,8 +58,12 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Member summary card */}
-        <View style={styles.summaryCard}>
+        {/* Member summary card — gradient */}
+        <LinearGradient
+          colors={['#2d8f2a', '#3aaa35', '#7dc142', '#c8e04a']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.summaryCard}>
           <View style={styles.summaryLeft}>
             <Text style={styles.summaryGreeting}>Good day,</Text>
             <Text style={styles.summaryName}>{member?.memberName ?? '—'}</Text>
@@ -70,7 +75,7 @@ export default function HomeScreen() {
           <View style={styles.summaryRight}>
             <MaterialCommunityIcons name="shield-check" size={52} color="rgba(255,255,255,0.3)" />
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Stats row */}
         <View style={styles.statsRow}>
@@ -136,8 +141,12 @@ export default function HomeScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Bottom Nav */}
-      <View style={styles.bottomNav}>
+      {/* Bottom Nav — gradient */}
+      <LinearGradient
+        colors={['#3aaa35', '#7dc142', '#c8e04a']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.bottomNav}>
         {[
           { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
           { icon: 'search-outline', label: 'Search',  route: '/(tabs)/search' },
@@ -146,11 +155,11 @@ export default function HomeScreen() {
           { icon: 'mail-outline',   label: 'Inbox',   route: '/(tabs)/inbox' },
         ].map((item, i) => (
           <TouchableOpacity key={i} style={styles.navItem} onPress={item.route ? () => router.push(item.route as any) : undefined}>
-            <Ionicons name={item.icon as any} size={22} color={(item as any).active ? '#3aaa35' : '#aaa'} />
+            <Ionicons name={item.icon as any} size={22} color={(item as any).active ? '#FFC200' : 'rgba(255,255,255,0.8)'} />
             <Text style={[styles.navLabel, (item as any).active && styles.navLabelActive]}>{item.label}</Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </LinearGradient>
     </View>
   );
 }
@@ -161,9 +170,9 @@ const styles = StyleSheet.create({
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
   topBarTitle: { fontSize: 16, fontWeight: '700', color: '#333' },
 
-  summaryCard: { backgroundColor: '#3aaa35', margin: 16, borderRadius: 16, padding: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  summaryCard: { margin: 16, borderRadius: 16, padding: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   summaryLeft: { flex: 1 },
-  summaryGreeting: { fontSize: 13, color: '#c8f0c8' },
+  summaryGreeting: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
   summaryName: { fontSize: 20, fontWeight: '800', color: '#fff', marginTop: 2, marginBottom: 10 },
   activeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   activeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#a8ff78' },
@@ -192,8 +201,8 @@ const styles = StyleSheet.create({
   announcementTitle: { fontSize: 14, fontWeight: '700', color: '#222', marginBottom: 6 },
   announcementBody: { fontSize: 13, color: '#666', lineHeight: 20 },
 
-  bottomNav: { flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingBottom: 20, paddingTop: 10 },
+  bottomNav: { flexDirection: 'row', paddingBottom: 20, paddingTop: 10 },
   navItem: { flex: 1, alignItems: 'center', gap: 3 },
-  navLabel: { fontSize: 10, color: '#aaa' },
-  navLabelActive: { color: '#3aaa35', fontWeight: '600' },
+  navLabel: { fontSize: 10, color: 'rgba(255,255,255,0.7)' },
+  navLabelActive: { color: '#FFC200', fontWeight: '600' },
 });

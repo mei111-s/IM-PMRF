@@ -131,7 +131,7 @@ export default function InboxScreen() {
         <View style={styles.bottomNav}>
           {getNavItems(router).map((item, i) => (
             <TouchableOpacity key={i} style={styles.navItem} onPress={item.route ? () => router.push(item.route as any) : undefined}>
-              <Ionicons name={item.icon as any} size={22} color={(item as any).active ? '#3aaa35' : '#aaa'} />
+              <Ionicons name={item.icon as any} size={22} color={(item as any).active ? '#FFC200' : 'rgba(255,255,255,0.6)'} />
               <Text style={[styles.navLabel, (item as any).active && styles.navLabelActive]}>{item.label}</Text>
             </TouchableOpacity>
           ))}
@@ -221,7 +221,7 @@ export default function InboxScreen() {
       <View style={styles.bottomNav}>
         {getNavItems(router).map((item, i) => (
           <TouchableOpacity key={i} style={styles.navItem} onPress={item.route ? () => router.push(item.route as any) : undefined}>
-            <Ionicons name={item.icon as any} size={22} color={(item as any).active ? '#3aaa35' : '#aaa'} />
+            <Ionicons name={item.icon as any} size={22} color={(item as any).active ? '#FFC200' : 'rgba(255,255,255,0.6)'} />
             <Text style={[styles.navLabel, (item as any).active && styles.navLabelActive]}>{item.label}</Text>
           </TouchableOpacity>
         ))}
@@ -284,8 +284,8 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#ccc', marginTop: 12 },
   emptySubtitle: { fontSize: 13, color: '#bbb', marginTop: 4 },
 
-  bottomNav: { flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingBottom: 20, paddingTop: 10 },
+  bottomNav: { flexDirection: 'row', backgroundColor: '#3aaa35', borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingBottom: 20, paddingTop: 10 },
   navItem: { flex: 1, alignItems: 'center', gap: 3 },
-  navLabel: { fontSize: 10, color: '#aaa' },
-  navLabelActive: { color: '#3aaa35', fontWeight: '600' },
+  navLabel: { fontSize: 10, color: 'rgba(255,255,255,0.6)' },
+  navLabelActive: { color: '#FFC200', fontWeight: '600' },
 });

@@ -8,13 +8,10 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#FFC200',
-        tabBarInactiveTintColor: '#ccc',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.5)',
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarStyle: {
-          backgroundColor: '#3aaa35',
-          borderTopColor: '#2d8f2a',
-        },
+        tabBarStyle: { display: 'none' }, // hidden by default; each screen manages its own nav
       }}>
       <Tabs.Screen
         name="index"
@@ -29,6 +26,8 @@ export default function TabLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="square.grid.2x2.fill" color={color} />,
+          tabBarStyle: { display: 'none' },
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -36,6 +35,8 @@ export default function TabLayout() {
         options={{
           title: 'Form',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="doc.text.fill" color={color} />,
+          tabBarStyle: { display: 'none' },
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -43,6 +44,8 @@ export default function TabLayout() {
         options={{
           title: 'Revalidation',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="arrow.clockwise.circle.fill" color={color} />,
+          tabBarStyle: { display: 'none' },
+          href: null,
         }}
       />
       <Tabs.Screen
