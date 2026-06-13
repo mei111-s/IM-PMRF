@@ -130,7 +130,13 @@ export default function InboxScreen() {
         </ScrollView>
         <View style={styles.bottomNavContainer}>
           <View style={styles.bottomNav}>
-            {getNavItems(router).map((item, i) => (
+            {[
+              { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
+              { icon: 'search-outline', label: 'Search',  route: '/(tabs)/search' },
+              { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/home' },
+              { icon: 'person-outline', label: 'Profile', route: '/(tabs)/profile' },
+              { icon: 'mail',           label: 'Inbox',   route: null, active: true },
+            ].map((item, i) => (
               <TouchableOpacity key={i} style={[styles.navItem, (item as any).active && styles.navItemActive]} onPress={item.route ? () => router.push(item.route as any) : undefined}>
                 <Ionicons name={item.icon as any} size={20} color={(item as any).active ? '#fff' : '#888'} />
                 <Text style={[styles.navLabel, (item as any).active && styles.navLabelActive]}>{item.label}</Text>
@@ -217,12 +223,18 @@ export default function InboxScreen() {
             </TouchableOpacity>
           );
         })}
-        <View style={{ height: 100 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
 
       <View style={styles.bottomNavContainer}>
         <View style={styles.bottomNav}>
-          {getNavItems(router).map((item, i) => (
+          {[
+            { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
+            { icon: 'search-outline', label: 'Search',  route: '/(tabs)/search' },
+            { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/home' },
+            { icon: 'person-outline', label: 'Profile', route: '/(tabs)/profile' },
+            { icon: 'mail',           label: 'Inbox',   route: null, active: true },
+          ].map((item, i) => (
             <TouchableOpacity key={i} style={[styles.navItem, (item as any).active && styles.navItemActive]} onPress={item.route ? () => router.push(item.route as any) : undefined}>
               <Ionicons name={item.icon as any} size={20} color={(item as any).active ? '#fff' : '#888'} />
               <Text style={[styles.navLabel, (item as any).active && styles.navLabelActive]}>{item.label}</Text>
@@ -232,16 +244,6 @@ export default function InboxScreen() {
       </View>
     </View>
   );
-}
-
-function getNavItems(router: any) {
-  return [
-    { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
-    { icon: 'search-outline', label: 'Search',  route: '/(tabs)/search' },
-    { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/home' },
-    { icon: 'person-outline', label: 'Profile', route: '/(tabs)/profile' },
-    { icon: 'mail',           label: 'Inbox',   route: null, active: true },
-  ];
 }
 
 const styles = StyleSheet.create({

@@ -24,7 +24,7 @@ function ImageCarousel() {
   const { width } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
-  const itemWidth = width - 32; // minus margins
+  const itemWidth = width - 32;
 
   const goToPrev = () => {
     const newIndex = currentIndex > 0 ? currentIndex - 1 : BANNER_IMAGES.length - 1;
@@ -60,7 +60,6 @@ function ImageCarousel() {
         ))}
       </ScrollView>
 
-      {/* Arrow buttons */}
       <View style={styles.carouselArrows} pointerEvents="box-none">
         <TouchableOpacity style={styles.arrowBtn} onPress={goToPrev}>
           <Text style={styles.arrowText}>‹</Text>
@@ -70,7 +69,6 @@ function ImageCarousel() {
         </TouchableOpacity>
       </View>
 
-      {/* Pagination dots */}
       <View style={styles.dotsRow}>
         {BANNER_IMAGES.map((_, i) => (
           <View key={i} style={i === currentIndex ? styles.dotActive : styles.dot} />
@@ -104,16 +102,16 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.root}>
-      {/* Slide-out Menu Drawer */}
+      {/* Slide-out Menu Drawer - matching pic 7 */}
       <Modal visible={menuOpen} animationType="none" transparent onRequestClose={() => setMenuOpen(false)}>
         <TouchableOpacity style={styles.drawerOverlay} activeOpacity={1} onPress={() => setMenuOpen(false)}>
           <View style={styles.drawer}>
-            {/* User strip with gradient */}
+            {/* User header with gradient - matching pic 7 */}
             <LinearGradient
               colors={['#3aaa35', '#7dc142', '#c8e04a']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.drawerUserStrip}>
+              style={styles.drawerHeader}>
               <View style={styles.drawerAvatar}>
                 <Text style={styles.drawerAvatarText}>{initials}</Text>
               </View>
@@ -131,7 +129,7 @@ export default function DashboardScreen() {
               { icon: 'settings-outline',      label: 'App Settings', route: null },
               { icon: 'document-text-outline', label: 'Form',       route: '/(tabs)/form' },
               { icon: 'globe-outline',         label: 'PhilHealth Online Services', route: null },
-              { icon: 'browser-outline',       label: 'PhilHealth Webpage', route: null },
+              { icon: 'help-circle-outline',   label: 'PhilHealth Webpage', route: null },
             ].map((item, i) => (
               <TouchableOpacity
                 key={i}
@@ -165,7 +163,7 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Welcome — gradient background matching Figma */}
+        {/* Welcome */}
         <LinearGradient
           colors={['#2d8f2a', '#3aaa35', '#7dc142', '#c8e04a']}
           start={{ x: 0, y: 0 }}
@@ -279,20 +277,20 @@ export default function DashboardScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Bottom Nav — compact rounded style matching pic 2 */}
+      {/* Bottom Nav — Home is active (matching pic 5) */}
       <View style={styles.bottomNavContainer}>
         <View style={styles.bottomNav}>
           {[
-            { icon: 'grid',    label: 'Menu',    active: true,  route: null },
+            { icon: 'grid',    label: 'Menu',    active: false, route: null, action: () => setMenuOpen(true) },
             { icon: 'search',  label: 'Search',  active: false, route: '/(tabs)/search' },
-            { icon: 'home',    label: 'Home',    active: false, route: '/(tabs)/home' },
+            { icon: 'home',    label: 'Home',    active: true,  route: null },
             { icon: 'person',  label: 'Profile', active: false, route: '/(tabs)/profile' },
             { icon: 'mail',    label: 'Inbox',   active: false, route: '/(tabs)/inbox' },
           ].map((item, i) => (
             <TouchableOpacity 
               key={i} 
               style={[styles.navItem, item.active && styles.navItemActive]} 
-              onPress={item.route ? () => router.push(item.route as any) : () => setMenuOpen(true)}>
+              onPress={item.action ? item.action : item.route ? () => router.push(item.route as any) : undefined}>
               <Ionicons name={item.icon as any} size={20} color={item.active ? '#fff' : '#888'} />
               <Text style={[styles.navLabel, item.active && styles.navLabelActive]}>{item.label}</Text>
             </TouchableOpacity>
@@ -307,15 +305,15 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fafafa' },
   container: { flex: 1 },
 
-  // Drawer — updated to match pic 4 (floating card style)
+  // Drawer — floating card style matching pic 7
   drawerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', flexDirection: 'row' },
   drawer: { 
-    width: 260, 
+    width: 280, 
     backgroundColor: '#fff', 
-    marginTop: 60,
+    marginTop: 50,
     marginLeft: 12,
     marginBottom: 20,
-    borderRadius: 16,
+    borderRadius: 20,
     paddingTop: 0,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -324,19 +322,19 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  drawerUserStrip: { 
+  drawerHeader: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    paddingHorizontal: 16, 
-    paddingVertical: 16, 
+    paddingHorizontal: 18, 
+    paddingVertical: 18, 
     gap: 12,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   drawerAvatar: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 22, 
+    width: 46, 
+    height: 46, 
+    borderRadius: 23, 
     backgroundColor: 'rgba(255,255,255,0.25)', 
     alignItems: 'center', 
     justifyContent: 'center', 
@@ -345,28 +343,28 @@ const styles = StyleSheet.create({
   },
   drawerAvatarText: { fontSize: 16, fontWeight: '800', color: '#fff' },
   drawerUserInfo: { flex: 1 },
-  drawerUserName: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  drawerUserName: { fontSize: 15, fontWeight: '700', color: '#fff' },
   drawerUserPin: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 1 },
   drawerDivider: { height: 1, backgroundColor: '#f0f0f0', marginVertical: 8 },
   drawerItem: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: 14, 
-    paddingHorizontal: 16, 
-    paddingVertical: 12,
+    paddingHorizontal: 18, 
+    paddingVertical: 13,
     marginHorizontal: 8,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   drawerItemText: { fontSize: 14, color: '#333', fontWeight: '500' },
   drawerBottom: { 
     marginTop: 'auto', 
-    padding: 12, 
+    padding: 14, 
     borderTopWidth: 1, 
     borderTopColor: '#f0f0f0' 
   },
   drawerViewMDR: { 
-    borderRadius: 10, 
-    paddingVertical: 12, 
+    borderRadius: 12, 
+    paddingVertical: 13, 
     alignItems: 'center',
     backgroundColor: '#3aaa35',
   },
@@ -430,7 +428,7 @@ const styles = StyleSheet.create({
   purposeBadgeAmend: { backgroundColor: '#fff8e1' },
   purposeBadgeText: { fontSize: 11, color: '#3aaa35', fontWeight: '700' },
 
-  // Bottom Nav — compact rounded style matching pic 2
+  // Bottom Nav — compact rounded style
   bottomNavContainer: {
     position: 'absolute',
     bottom: 16,

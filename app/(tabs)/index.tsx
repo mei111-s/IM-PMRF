@@ -29,7 +29,11 @@ export default function LoginScreen() {
   const handleLogin = () => {
     if (VALID_PINS.includes(pin)) {
       authStore.setPin(pin);
-      router.push('/(tabs)/explore');
+      // Clear navigation history before going to dashboard
+      if (router.canDismiss()) {
+        router.dismissAll();
+      }
+      router.replace('/(tabs)/explore');
     } else {
       Alert.alert('Invalid PIN', 'Please check your PIN and try again.');
     }

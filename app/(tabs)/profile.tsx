@@ -143,7 +143,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
 
       {/* Bottom Nav — compact rounded style */}

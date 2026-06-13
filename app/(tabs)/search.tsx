@@ -181,7 +181,7 @@ export default function SearchScreen() {
           </>
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
 
       {/* Bottom Nav — compact rounded style */}
