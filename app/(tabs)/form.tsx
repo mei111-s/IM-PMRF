@@ -8,10 +8,12 @@ import {
   TouchableOpacity,
   View,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRouter } from 'expo-router';
+import { addMember, addDependent } from '@/stores/api';
 
 type Dependent = {
   dependentName: string;
@@ -66,6 +68,7 @@ export default function MembershipForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     konSulTaProvider: '',
@@ -117,7 +120,86 @@ export default function MembershipForm() {
     else router.push('/(tabs)/explore');
   };
 
-  // ── SUCCESS SCREEN — gradient matching Figma ──
+  const generatePIN = () => {
+    const random = Math.floor(1000 + Math.random() * 9000);
+    return `0010-0123-${random}`;
+  };
+
+  const formatDate = (year: string, month: string, day: string) => {
+    const y = year.padStart(4, '0');
+    const m = month.padStart(2, '0');
+    const d = day.padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const handleSubmit = async () => {
+    if (!form.agreeTerms || !form.agreeConsent) {
+      Alert.alert('Required', 'Please agree to the terms and consent.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const newPIN = generatePIN();
+
+      const memberData = {
+        PIN: newPIN,
+        Purpose: 'Registration',
+        KonSultaProvider: form.konSulTaProvider,
+        MemberName: form.memberName,
+        MotherMaidenName: form.motherMaidenName,
+        SpouseName: form.spouseName || 'N/A',
+        DateOfBirth: formatDate(form.dobYear, form.dobMonth, form.dobDay),
+        PlaceOfBirth: form.placeOfBirth,
+        Sex: form.sex,
+        CivilStatus: form.civilStatus,
+        Citizenship: form.citizenship,
+        PhilSysIDNum: form.philSysIDNum || null,
+        TIN: form.tin || null,
+        PermanentAddress: form.permanentAddress,
+        MailingAddress: form.mailingAddress || 'SAME AS ABOVE',
+        HomePhoneNum: form.homePhoneNum || 'N/A',
+        MobileNum: form.mobileNum,
+        BusinessDirectLine: form.businessDirectLine || 'N/A',
+        EmailAddress: form.emailAddress,
+        MonthlyIncome: form.monthlyIncome,
+        Profession: form.profession,
+        ProofOfIncome: form.proofOfIncome,
+        ProfessionID: form.professionID,
+      };
+
+      const memberRes = await addMember(memberData);
+      console.log('Member added:', memberRes);
+
+      if (memberRes.success) {
+        // Add dependents
+        for (const dep of dependents) {
+          if (dep.dependentName.trim()) {
+            const depData = {
+              DependentName: dep.dependentName,
+              DependentRelationship: dep.dependentRelationship,
+              DependentDOB: formatDate(dep.dependentDOBYear, dep.dependentDOBMonth, dep.dependentDOBDay),
+              DependentCitizenship: dep.dependentCitizenship,
+              DependentPermanentDisability: dep.permanentDisability,
+            };
+            await addDependent(newPIN, depData);
+          }
+        }
+
+        Alert.alert('Success', `Member registered with PIN: ${newPIN}`);
+        setSubmitted(true);
+      } else {
+        Alert.alert('Error', memberRes.error || 'Failed to add member');
+      }
+    } catch (err) {
+      console.error('Submit error:', err);
+      Alert.alert('Error', 'Could not connect to server. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (submitted) {
     return (
       <View style={styles.successContainer}>
@@ -132,7 +214,6 @@ export default function MembershipForm() {
           <View style={{ width: 36 }} />
         </View>
 
-        {/* Gradient banner with check — matches Figma green→yellow */}
         <LinearGradient
           colors={['#3aaa35', '#7dc142', '#c8e04a']}
           start={{ x: 0, y: 0 }}
@@ -169,13 +250,11 @@ export default function MembershipForm() {
       <PageHeader onBack={handleBack} onForward={step < 3 ? () => setStep(Math.min(step + 1, 3)) : undefined} />
 
       <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
-        {/* Title & Progress */}
         <View style={styles.titleSection}>
           <Text style={styles.formTitle}>New Membership{'\n'}Registration Form</Text>
           <Text style={styles.stepSubtitle}>
             {step < 3 ? `Step ${step + 1} of 3: ${STEPS[step]}` : 'Submission Confirmation'}
           </Text>
-          {/* Gradient progress bar matching Figma */}
           <View style={styles.progressTrack}>
             <LinearGradient
               colors={['#3aaa35', '#7dc142', '#c8e04a']}
@@ -186,7 +265,6 @@ export default function MembershipForm() {
           </View>
         </View>
 
-        {/* ── STEP 0: Personal Details ── */}
         {step === 0 && (
           <View style={styles.formBody}>
             <Text style={styles.sectionHeading}>I. Personal Details</Text>
@@ -311,7 +389,7 @@ export default function MembershipForm() {
               <Text style={styles.addMoreText}>+ Add More</Text>
             </TouchableOpacity>
             <Field label="Profession ID">
-              <TextInput style={styles.input} placeholder="X000" placeholderTextColor="#bbb"
+              <TextInput style={styles.input} placeholder="P001, P002, P003, P004, or P005" placeholderTextColor="#bbb"
                 value={form.professionID} onChangeText={v => update('professionID', v)} />
             </Field>
 
@@ -334,7 +412,6 @@ export default function MembershipForm() {
           </View>
         )}
 
-        {/* ── STEP 1: Dependent Declaration ── */}
         {step === 1 && (
           <View style={styles.formBody}>
             <Text style={styles.sectionHeading}>IV. Declaration of Dependents</Text>
@@ -411,13 +488,12 @@ export default function MembershipForm() {
           </View>
         )}
 
-        {/* ── STEP 2: Member Type ── */}
         {step === 2 && (
           <View style={styles.formBody}>
             <Text style={styles.sectionHeading}>IV. Member Type</Text>
             <Text style={styles.subHeading}>Employment Information</Text>
             <Field label="Profession ID">
-              <TextInput style={styles.input} placeholder="X000" placeholderTextColor="#bbb"
+              <TextInput style={styles.input} placeholder="P001, P002, P003, P004, or P005" placeholderTextColor="#bbb"
                 value={form.professionID} onChangeText={v => update('professionID', v)} />
             </Field>
             <Field label="Member Type/Profession">
@@ -447,7 +523,6 @@ export default function MembershipForm() {
           </View>
         )}
 
-        {/* ── STEP 3: Confirmation ── */}
         {step === 3 && (
           <View style={styles.formBody}>
             <View style={styles.warningBox}>
@@ -505,7 +580,7 @@ export default function MembershipForm() {
             <TouchableOpacity style={styles.addMoreBtn}>
               <Text style={styles.addMoreText}>+ Add More</Text>
             </TouchableOpacity>
-            <ReviewField label="Profession ID" value={form.professionID} placeholder="X000" />
+            <ReviewField label="Profession ID" value={form.professionID} placeholder="P001, P002, P003, P004, or P005" />
 
             {dependents.length > 0 && (
               <>
@@ -543,7 +618,7 @@ export default function MembershipForm() {
 
             <Text style={styles.sectionHeading}>IV. Member Type</Text>
             <Text style={styles.subHeading}>Employment Information</Text>
-            <ReviewField label="Profession ID" value={form.professionID} placeholder="X000" />
+            <ReviewField label="Profession ID" value={form.professionID} placeholder="P001, P002, P003, P004, or P005" />
             <ReviewField label="Member Type/Profession" value={form.memberType} placeholder="Employed Private" isDropdown />
 
             <View style={styles.confirmActions}>
@@ -569,8 +644,15 @@ export default function MembershipForm() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.submitBtnGradient}>
-                  <TouchableOpacity style={styles.submitBtnInner} onPress={() => setSubmitted(true)}>
-                    <Text style={styles.submitText}>Submit Application Form</Text>
+                  <TouchableOpacity 
+                    style={styles.submitBtnInner} 
+                    onPress={handleSubmit}
+                    disabled={submitting}>
+                    {submitting ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={styles.submitText}>Submit Application Form</Text>
+                    )}
                   </TouchableOpacity>
                 </LinearGradient>
               </View>
@@ -671,7 +753,6 @@ const styles = StyleSheet.create({
   submitBtnInner: { paddingVertical: 13, alignItems: 'center' },
   submitText: { fontSize: 13, color: '#fff', fontWeight: '700' },
 
-  // Success screen
   successContainer: { flex: 1, backgroundColor: '#fff' },
   successHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

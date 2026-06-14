@@ -1,4 +1,5 @@
 import { authStore } from '@/stores/auth-store';
+import { fetchMember } from '@/stores/api'; // ← ADD THIS IMPORT
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -12,52 +13,63 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator, // ← ADD THIS for loading spinner
 } from 'react-native';
 
-const VALID_PINS = [
-  '0010-0123-0001', '0010-0123-0002', '0010-0123-0003', '0010-0123-0004', '0010-0123-0005',
-  '0010-0123-0006', '0010-0123-0007', '0010-0123-0008', '0010-0123-0009', '0010-0123-0010',
-];
+// REMOVED: const VALID_PINS = [...]
 
 export default function LoginScreen() {
   const [pin, setPin] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false); // ← ADD loading state
   const router = useRouter();
 
-  const handleLogin = () => {
-    if (VALID_PINS.includes(pin)) {
-      authStore.setPin(pin);
-      // Clear navigation history before going to dashboard
-      if (router.canDismiss()) {
-        router.dismissAll();
+  const handleLogin = async () => { // ← MAKE ASYNC
+    if (!pin.trim()) {
+      Alert.alert('Error', 'Please enter your PhilHealth PIN.');
+      return;
+    }
+
+    setLoading(true); // Show loading
+
+    try {
+      const member = await fetchMember(pin); // ← CALL API
+
+      if (member && !member.error) {
+        authStore.setPin(pin);
+        // Clear navigation history before going to dashboard
+        if (router.canDismiss()) {
+          router.dismissAll();
+        }
+        router.replace('/(tabs)/explore');
+      } else {
+        Alert.alert('Invalid PIN', 'Please check your PIN and try again.');
       }
-      router.replace('/(tabs)/explore');
-    } else {
-      Alert.alert('Invalid PIN', 'Please check your PIN and try again.');
+    } catch (err) {
+      Alert.alert('Connection Error', 'Could not connect to server. Please check your network.');
+      console.error(err);
+    } finally {
+      setLoading(false); // Hide loading
     }
   };
 
   return (
-    // Gradient: deep green (top-left) → yellow-green (bottom-right), matching Figma
     <LinearGradient
       colors={['#2d8f2a', '#3aaa35', '#7dc142', '#c8e04a']}
       style={styles.root}
       start={{ x: 0, y: 0 }}
       end={{ x: 0.4, y: 1 }}>
 
-      {/* Top spacer with tagline */}
       <View style={styles.topSection}>
         <Text style={styles.tagline}>Your Partner in Health</Text>
       </View>
 
-      {/* Card */}
       <KeyboardAvoidingView
         style={styles.cardWrap}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={styles.card}>
-          {/* Logo */}
           <View style={styles.logoRow}>
             <Image
               source={require('@/assets/images/philhealth_logo.png')}
@@ -70,7 +82,6 @@ export default function LoginScreen() {
           <Text style={styles.welcomeTitle}>Welcome!</Text>
           <Text style={styles.welcomeSub}>Enter your 12 digits PhilHealth PIN.</Text>
 
-          {/* PIN input */}
           <TextInput
             style={styles.input}
             placeholder="PhilHealth PIN"
@@ -78,9 +89,9 @@ export default function LoginScreen() {
             value={pin}
             onChangeText={setPin}
             autoCapitalize="none"
+            editable={!loading} // ← Disable while loading
           />
 
-          {/* Password input */}
           <View style={styles.passwordRow}>
             <TextInput
               style={styles.passwordInput}
@@ -89,13 +100,13 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
+              editable={!loading} // ← Disable while loading
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
               <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Remember me */}
           <TouchableOpacity style={styles.rememberRow} onPress={() => setRemember(!remember)}>
             <View style={[styles.checkbox, remember && styles.checkboxChecked]}>
               {remember && <Text style={styles.checkMark}>✓</Text>}
@@ -103,18 +114,24 @@ export default function LoginScreen() {
             <Text style={styles.rememberText}>Remember me</Text>
           </TouchableOpacity>
 
-          {/* Login button — gradient matching Figma's green→yellow-green */}
           <LinearGradient
             colors={['#3aaa35', '#7dc142', '#c8e04a']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.loginBtnGradient}>
-            <TouchableOpacity style={styles.loginBtnInner} onPress={handleLogin}>
-              <Text style={styles.loginBtnText}>Login</Text>
+            <TouchableOpacity 
+              style={styles.loginBtnInner} 
+              onPress={handleLogin}
+              disabled={loading} // ← Disable button while loading
+            >
+              {loading ? ( // ← Show spinner when loading
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.loginBtnText}>Login</Text>
+              )}
             </TouchableOpacity>
           </LinearGradient>
 
-          {/* Links */}
           <View style={styles.linksRow}>
             <TouchableOpacity><Text style={styles.linkText}>Forgot Password?</Text></TouchableOpacity>
             <TouchableOpacity><Text style={styles.linkText}>Create New Account</Text></TouchableOpacity>
@@ -126,7 +143,6 @@ export default function LoginScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      {/* Bottom bar */}
       <View style={styles.bottomBar}>
         <Text style={styles.bottomLabel}>Language:</Text>
         <TouchableOpacity><Text style={styles.bottomLink}>Preferences ▾</Text></TouchableOpacity>

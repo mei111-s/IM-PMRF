@@ -1,25 +1,59 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { authStore } from '@/stores/auth-store';
-import { MEMBERS, getDependentsByPin, getProfessionLabel } from '@/stores/member-data';
+import { fetchMemberFull } from '@/stores/api';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const pin = authStore.getPin();
-  const member = MEMBERS[pin];
-  const dependents = getDependentsByPin(pin);
+  const [member, setMember] = useState<any>(null);
+  const [dependents, setDependents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'personal' | 'settings'>('personal');
 
-  const dobFormatted = member?.dateOfBirth
-    ? new Date(member.dateOfBirth).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+  useEffect(() => {
+    if (pin) {
+      setLoading(true);
+      fetchMemberFull(pin)
+        .then(data => {
+          if (!data.error) {
+            setMember(data.member);
+            setDependents(data.dependents || []);
+          }
+        })
+        .catch(err => console.error('Profile fetch error:', err))
+        .finally(() => setLoading(false));
+    }
+  }, [pin]);
+
+  const dobFormatted = member?.DateOfBirth
+    ? new Date(member.DateOfBirth).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
     : '—';
+
+  const getProfessionLabel = (professionID?: string) => {
+    const map: Record<string, string> = {
+      P001: 'Employed Private',
+      P002: 'Employed Government',
+      P003: 'Self-Earning Individual',
+      P004: 'Sole Proprietor',
+      P005: 'Professional Practitioner',
+    };
+    return map[professionID || ''] || '—';
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#3aaa35" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>
-      {/* Header bar */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
           <Ionicons name="menu" size={24} color="#333" />
@@ -31,7 +65,6 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Green → Yellow gradient banner matching Figma */}
         <LinearGradient
           colors={['#2d8f2a', '#3aaa35', '#7dc142', '#c8e04a']}
           start={{ x: 0, y: 0 }}
@@ -42,22 +75,21 @@ export default function ProfileScreen() {
               <Ionicons name="person" size={40} color="rgba(255,255,255,0.7)" />
             </View>
           </View>
-          <Text style={styles.bannerName}>{member?.memberName ?? '—'}</Text>
+          <Text style={styles.bannerName}>{member?.MemberName ?? '—'}</Text>
           <View style={styles.bannerEmailRow}>
-            <Text style={styles.bannerEmail}>{member?.emailAddress ?? '—'}</Text>
+            <Text style={styles.bannerEmail}>{member?.EmailAddress ?? '—'}</Text>
             <Ionicons name="pencil-outline" size={13} color="rgba(255,255,255,0.8)" style={{ marginLeft: 4 }} />
           </View>
           <View style={styles.bannerMetaRow}>
             <Text style={styles.bannerMetaText}>PhilHealth Member</Text>
             <Text style={styles.bannerMetaDot}>  ·  </Text>
-            <Text style={styles.bannerMetaText}>{member?.permanentAddress ?? '—'}</Text>
+            <Text style={styles.bannerMetaText}>{member?.PermanentAddress ?? '—'}</Text>
           </View>
           <TouchableOpacity style={styles.editProfileBtn}>
             <Text style={styles.editProfileText}>Edit Profile</Text>
           </TouchableOpacity>
         </LinearGradient>
 
-        {/* Tabs */}
         <View style={styles.tabRow}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'personal' && styles.tabActive]}
@@ -75,36 +107,38 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Personal Info */}
         {activeTab === 'personal' && (
           <View style={styles.infoSection}>
-            <InfoRow label="PhilHealth PIN" value={pin} />
+            <InfoRow label="PhilHealth PIN" value={member?.PIN || pin} />
             <InfoRow label="Date of Birth" value={dobFormatted} />
-            <InfoRow label="Place of Birth" value={member?.placeOfBirth} />
-            <InfoRow label="Sex" value={member?.sex} />
-            <InfoRow label="Civil Status" value={member?.civilStatus} />
-            <InfoRow label="Citizenship" value={member?.citizenship} />
-            <InfoRow label="Phone Number" value={member?.mobileNum ? `0${member.mobileNum}` : '—'} />
-            <InfoRow label="Home Phone" value={member?.homePhoneNum} />
-            <InfoRow label="Current Address" value={member?.permanentAddress} />
-            <InfoRow label="Mailing Address" value={member?.mailingAddress} />
-            <InfoRow label="Email Address" value={member?.emailAddress} />
-            <InfoRow label="Philsys ID Number" value={member?.philSysIDNum} />
-            <InfoRow label="TIN" value={member?.tin} />
-            <InfoRow label="Member Type" value={getProfessionLabel(member?.professionID ?? '')} />
-            <InfoRow label="Monthly Income" value={member?.monthlyIncome ? `₱${parseFloat(member.monthlyIncome).toLocaleString()}` : '—'} />
-            <InfoRow label="Profession" value={member?.profession && member.profession !== 'N/A' ? member.profession : '—'} />
-            <InfoRow label="Proof of Income" value={member?.proofOfIncome} />
+            <InfoRow label="Place of Birth" value={member?.PlaceOfBirth} />
+            <InfoRow label="Sex" value={member?.Sex} />
+            <InfoRow label="Civil Status" value={member?.CivilStatus} />
+            <InfoRow label="Citizenship" value={member?.Citizenship} />
+            <InfoRow label="Phone Number" value={member?.MobileNum ? `0${member.MobileNum}` : '—'} />
+            <InfoRow label="Home Phone" value={member?.HomePhoneNum} />
+            <InfoRow label="Current Address" value={member?.PermanentAddress} />
+            <InfoRow label="Mailing Address" value={member?.MailingAddress} />
+            <InfoRow label="Email Address" value={member?.EmailAddress} />
+            <InfoRow label="Philsys ID Number" value={member?.PhilSysIDNum} />
+            <InfoRow label="TIN" value={member?.TIN} />
+            <InfoRow label="Member Type" value={getProfessionLabel(member?.ProfessionID)} />
+            <InfoRow label="Monthly Income" value={member?.MonthlyIncome ? `₱${parseFloat(member.MonthlyIncome).toLocaleString()}` : '—'} />
+            <InfoRow label="Profession" value={member?.Profession && member.Profession !== 'N/A' ? member.Profession : '—'} />
+            <InfoRow label="Proof of Income" value={member?.ProofOfIncome} />
+            <InfoRow label="KonSulTa Provider" value={member?.KonSultaProvider} />
+            <InfoRow label="Mother's Maiden Name" value={member?.MotherMaidenName} />
+            <InfoRow label="Spouse Name" value={member?.SpouseName} />
 
             {dependents.length > 0 && (
               <>
                 <Text style={styles.depHeading}>Dependents</Text>
-                {dependents.map((dep, i) => (
+                {dependents.map((dep: any, i: number) => (
                   <View key={i} style={styles.depCard}>
-                    <Text style={styles.depName}>{dep.dependentName}</Text>
-                    <Text style={styles.depDetail}>{dep.dependentRelationship} · Born {dep.dependentDOB}</Text>
-                    <Text style={styles.depDetail}>Citizenship: {dep.dependentCitizenship}</Text>
-                    {dep.dependentPermanentDisability === 'Yes' && (
+                    <Text style={styles.depName}>{dep.DependentName}</Text>
+                    <Text style={styles.depDetail}>{dep.DependentRelationship} · Born {dep.DependentDOB}</Text>
+                    <Text style={styles.depDetail}>Citizenship: {dep.DependentCitizenship}</Text>
+                    {dep.DependentPermanentDisability === 'Yes' && (
                       <View style={styles.disabilityBadge}>
                         <Text style={styles.disabilityText}>With Permanent Disability</Text>
                       </View>
@@ -116,16 +150,15 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* Settings */}
         {activeTab === 'settings' && (
           <View style={styles.infoSection}>
             {[
-              { icon: 'lock-closed-outline',      label: 'Change Password' },
-              { icon: 'shield-checkmark-outline',  label: 'Privacy & Security' },
-              { icon: 'notifications-outline',     label: 'Notification preferences' },
-              { icon: 'help-circle-outline',       label: 'Help & Support' },
-              { icon: 'language-outline',          label: 'Language' },
-              { icon: 'log-out-outline',           label: 'Logout', danger: true },
+              { icon: 'lock-closed-outline', label: 'Change Password' },
+              { icon: 'shield-checkmark-outline', label: 'Privacy & Security' },
+              { icon: 'notifications-outline', label: 'Notification preferences' },
+              { icon: 'help-circle-outline', label: 'Help & Support' },
+              { icon: 'language-outline', label: 'Language' },
+              { icon: 'log-out-outline', label: 'Logout', danger: true },
             ].map((item, i) => (
               <TouchableOpacity
                 key={i}
@@ -146,15 +179,14 @@ export default function ProfileScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Bottom Nav — compact rounded style */}
       <View style={styles.bottomNavContainer}>
         <View style={styles.bottomNav}>
           {[
-            { icon: 'grid-outline',   label: 'Menu',    route: '/(tabs)/explore' },
-            { icon: 'search-outline', label: 'Search',  route: '/(tabs)/search' },
-            { icon: 'home-outline',   label: 'Home',    route: '/(tabs)/home' },
-            { icon: 'person',         label: 'Profile', route: null, active: true },
-            { icon: 'mail-outline',   label: 'Inbox',   route: '/(tabs)/inbox' },
+            { icon: 'grid-outline', label: 'Menu', route: '/(tabs)/explore' },
+            { icon: 'search-outline', label: 'Search', route: '/(tabs)/search' },
+            { icon: 'home-outline', label: 'Home', route: '/(tabs)/home' },
+            { icon: 'person', label: 'Profile', route: null, active: true },
+            { icon: 'mail-outline', label: 'Inbox', route: '/(tabs)/inbox' },
           ].map((item, i) => (
             <TouchableOpacity
               key={i}
@@ -267,7 +299,6 @@ const styles = StyleSheet.create({
   settingsLabel: { flex: 1, fontSize: 14, color: '#333', fontWeight: '500' },
   settingsLabelDanger: { color: '#e53935' },
 
-  // Bottom Nav — compact rounded style
   bottomNavContainer: {
     position: 'absolute',
     bottom: 16,

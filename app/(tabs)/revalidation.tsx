@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState, useEffect } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { authStore } from '@/stores/auth-store';
-import { MEMBERS, PROFESSIONS, getDependentsByPin, getProfessionLabel, parseDOB, type Member, type Dependent } from '@/stores/member-data';
+import { fetchMemberFull, updateMember, addDependent } from '@/stores/api';
 
 // ── Helpers ───────────────────────────────────────────────────
 function PageHeader({ onBack, onForward }: { onBack: () => void; onForward?: () => void }) {
@@ -45,12 +45,14 @@ function ReadField({ label, value, placeholder, isDropdown }: { label: string; v
   );
 }
 
-function BottomActions({ leftLabel, rightLabel, onLeft, onRight, agreeTerms, agreeConsent, onToggleTerms, onToggleConsent }: { leftLabel: string; rightLabel: string; onLeft: () => void; onRight: () => void; agreeTerms: boolean; agreeConsent: boolean; onToggleTerms: () => void; onToggleConsent: () => void }) {
+function BottomActions({ leftLabel, rightLabel, onLeft, onRight, agreeTerms, agreeConsent, onToggleTerms, onToggleConsent, loading }: { leftLabel: string; rightLabel: string; onLeft: () => void; onRight: () => void; agreeTerms: boolean; agreeConsent: boolean; onToggleTerms: () => void; onToggleConsent: () => void; loading?: boolean }) {
   return (
     <View style={styles.bottomActions}>
       <View style={styles.actionBtnRow}>
         <TouchableOpacity style={styles.saveBtn} onPress={onLeft}><Text style={styles.saveBtnText}>{leftLabel}</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.continueBtn} onPress={onRight}><Text style={styles.continueBtnText}>{rightLabel}</Text></TouchableOpacity>
+        <TouchableOpacity style={[styles.continueBtn, loading && { opacity: 0.6 }]} onPress={onRight} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.continueBtnText}>{rightLabel}</Text>}
+        </TouchableOpacity>
       </View>
       <TouchableOpacity style={styles.checkRow} onPress={onToggleTerms}>
         <View style={[styles.checkbox, agreeTerms && styles.checkboxChecked]}>{agreeTerms && <Text style={styles.checkMark}>✓</Text>}</View>
@@ -68,70 +70,199 @@ function BottomActions({ leftLabel, rightLabel, onLeft, onRight, agreeTerms, agr
 export default function RevalidationScreen() {
   const router = useRouter();
   const pin = authStore.getPin();
-  const source = MEMBERS[pin];
-
-  const dob = source ? parseDOB(source.dateOfBirth) : { year: '', month: '', day: '' };
-
-  // Convert DB member to editable form shape
-  const toForm = (m: Member) => ({
-    konSulTaProvider: m.konSulTaProvider,
-    memberName: m.memberName,
-    motherMaidenName: m.motherMaidenName,
-    spouseName: m.spouseName,
-    dobYear: parseDOB(m.dateOfBirth).year,
-    dobMonth: parseDOB(m.dateOfBirth).month,
-    dobDay: parseDOB(m.dateOfBirth).day,
-    placeOfBirth: m.placeOfBirth,
-    sex: m.sex,
-    civilStatus: m.civilStatus,
-    citizenship: m.citizenship,
-    philSysIDNum: m.philSysIDNum,
-    tin: m.tin,
-    permanentAddress: m.permanentAddress,
-    mailingAddress: m.mailingAddress,
-    sameAsPermanent: m.mailingAddress === 'SAME AS ABOVE',
-    homePhoneNum: m.homePhoneNum,
-    mobileNum: m.mobileNum,
-    businessDirectLine: m.businessDirectLine,
-    emailAddress: m.emailAddress,
-    monthlyIncome: m.monthlyIncome,
-    profession: m.profession,
-    proofOfIncome: m.proofOfIncome,
-    professionID: m.professionID,
-    memberType: getProfessionLabel(m.professionID),
-  });
-
-  const toDependentForm = (d: Dependent) => ({
-    dependentName: d.dependentName,
-    dependentRelationship: d.dependentRelationship,
-    dependentDOBYear: parseDOB(d.dependentDOB).year,
-    dependentDOBMonth: parseDOB(d.dependentDOB).month,
-    dependentDOBDay: parseDOB(d.dependentDOB).day,
-    dependentCitizenship: d.dependentCitizenship,
-    permanentDisability: d.dependentPermanentDisability,
-  });
-
-  type FormShape = ReturnType<typeof toForm>;
-  type DepForm = ReturnType<typeof toDependentForm>;
 
   const [screen, setScreen] = useState<'default' | 'update' | 'view'>('default');
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreeConsent, setAgreeConsent] = useState(false);
-  const [form, setForm] = useState<FormShape>(source ? toForm(source) : {} as FormShape);
-  const [dependents, setDependents] = useState<DepForm[]>(
-    getDependentsByPin(pin).map(toDependentForm)
-  );
+  const [loading, setLoading] = useState(false);
+  const [apiLoading, setApiLoading] = useState(true);
 
-  const update = (field: keyof FormShape, value: string | boolean) =>
-    setForm(prev => ({ ...prev, [field]: value }));
+  // API data
+  const [member, setMember] = useState<any>(null);
+  const [dependents, setDependents] = useState<any[]>([]);
+
+  // Form state
+  const [form, setForm] = useState<any>({});
+  const [formDependents, setFormDependents] = useState<any[]>([]);
+
+  // Load data from API
+  useEffect(() => {
+    if (pin) loadData();
+  }, [pin]);
+
+  const loadData = async () => {
+    setApiLoading(true);
+    try {
+      const data = await fetchMemberFull(pin);
+      if (!data.error) {
+        setMember(data.member);
+        setDependents(data.dependents || []);
+
+        // Initialize form from member data
+        const dob = data.member?.DateOfBirth ? new Date(data.member.DateOfBirth) : null;
+        setForm({
+          konSulTaProvider: data.member?.KonSultaProvider || '',
+          memberName: data.member?.MemberName || '',
+          motherMaidenName: data.member?.MotherMaidenName || '',
+          spouseName: data.member?.SpouseName || '',
+          dobYear: dob ? String(dob.getFullYear()) : '',
+          dobMonth: dob ? String(dob.getMonth() + 1) : '',
+          dobDay: dob ? String(dob.getDate()) : '',
+          placeOfBirth: data.member?.PlaceOfBirth || '',
+          sex: data.member?.Sex || '',
+          civilStatus: data.member?.CivilStatus || '',
+          citizenship: data.member?.Citizenship || '',
+          philSysIDNum: data.member?.PhilSysIDNum || '',
+          tin: data.member?.TIN || '',
+          permanentAddress: data.member?.PermanentAddress || '',
+          mailingAddress: data.member?.MailingAddress || '',
+          sameAsPermanent: data.member?.MailingAddress === 'SAME AS ABOVE',
+          homePhoneNum: data.member?.HomePhoneNum || '',
+          mobileNum: data.member?.MobileNum || '',
+          businessDirectLine: data.member?.BusinessDirectLine || '',
+          emailAddress: data.member?.EmailAddress || '',
+          monthlyIncome: data.member?.MonthlyIncome ? String(data.member.MonthlyIncome) : '',
+          profession: data.member?.Profession || '',
+          proofOfIncome: data.member?.ProofOfIncome || '',
+          professionID: data.member?.ProfessionID || '',
+          memberType: data.member?.ProfessionID || '',
+        });
+
+        // Initialize dependents form
+        const depForms = (data.dependents || []).map((d: any) => {
+          const dDob = d.DependentDOB ? new Date(d.DependentDOB) : null;
+          return {
+            dependentName: d.DependentName || '',
+            dependentRelationship: d.DepenedentRelationship || 'Child',  // ← correct DB column
+            dependentDOBYear: dDob ? String(dDob.getFullYear()) : '',
+            dependentDOBMonth: dDob ? String(dDob.getMonth() + 1) : '',
+            dependentDOBDay: dDob ? String(dDob.getDate()) : '',
+            dependentCitizenship: d.DependentCitizenship || '',
+            permanentDisability: d.DependentPermanentDisability || 'No',
+          };
+        });
+        setFormDependents(depForms.length > 0 ? depForms : [{
+          dependentName: '', dependentRelationship: 'Child',
+          dependentDOBYear: '', dependentDOBMonth: '', dependentDOBDay: '',
+          dependentCitizenship: '', permanentDisability: 'No',
+        }]);
+      }
+    } catch (err) {
+      console.error('Failed to load member data:', err);
+      Alert.alert('Error', 'Failed to load member data from server.');
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  const getProfessionLabel = (profID: string) => {
+    const map: Record<string, string> = {
+      'P001': 'Employed Private',
+      'P002': 'Employed Government',
+      'P003': 'Self-Earning Individual',
+      'P004': 'Sole Proprietor',
+      'P005': 'Professional Practitioner',
+    };
+    return map[profID] || profID;
+  };
+
+  const update = (field: string, value: string | boolean) =>
+    setForm((prev: any) => ({ ...prev, [field]: value }));
   const updateDep = (i: number, field: string, value: string) =>
-    setDependents(prev => prev.map((d, idx) => idx === i ? { ...d, [field]: value } : d));
-  const addDep = () => setDependents(prev => [...prev, { dependentName: '', dependentRelationship: 'Child', dependentDOBYear: '', dependentDOBMonth: '', dependentDOBDay: '', dependentCitizenship: 'Filipino', permanentDisability: 'No' }]);
-  const removeDep = (i: number) => setDependents(prev => prev.filter((_, idx) => idx !== i));
+    setFormDependents((prev: any[]) => prev.map((d, idx) => idx === i ? { ...d, [field]: value } : d));
+  const addDep = () => setFormDependents((prev: any[]) => [...prev, {
+    dependentName: '', dependentRelationship: 'Child',
+    dependentDOBYear: '', dependentDOBMonth: '', dependentDOBDay: '',
+    dependentCitizenship: '', permanentDisability: 'No',
+  }]);
+  const removeDep = (i: number) => setFormDependents((prev: any[]) => prev.filter((_, idx) => idx !== i));
 
-  const submittedOn = 'May 02, 2025';
+  const submittedOn = member ? new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+
+  const handleUpdateSubmit = async () => {
+    if (!agreeTerms || !agreeConsent) {
+      Alert.alert('Required', 'Please agree to the terms and consent.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const dob = `${form.dobYear}-${form.dobMonth.padStart(2, '0')}-${form.dobDay.padStart(2, '0')}`;
+
+      const updateData = {
+        KonSultaProvider: form.konSulTaProvider,
+        MemberName: form.memberName,
+        MotherMaidenName: form.motherMaidenName,
+        SpouseName: form.spouseName,
+        DateOfBirth: dob,
+        PlaceOfBirth: form.placeOfBirth,
+        Sex: form.sex,
+        CivilStatus: form.civilStatus,
+        Citizenship: form.citizenship,
+        PhilSysIDNum: form.philSysIDNum,
+        TIN: form.tin,
+        PermanentAddress: form.permanentAddress,
+        MailingAddress: form.sameAsPermanent ? 'SAME AS ABOVE' : form.mailingAddress,
+        HomePhoneNum: form.homePhoneNum,
+        MobileNum: form.mobileNum,
+        BusinessDirectLine: form.businessDirectLine,
+        EmailAddress: form.emailAddress,
+        MonthlyIncome: form.monthlyIncome,
+        Profession: form.profession,
+        ProofOfIncome: form.proofOfIncome,
+        ProfessionID: form.professionID,
+      };
+
+      const result = await updateMember(pin, updateData);
+      if (result.success) {
+        let depErrors = [];
+        for (const dep of formDependents) {
+          const existingDep = dependents.find((d: any) =>
+            d.DependentName === dep.dependentName &&
+            d.DepenedentRelationship === dep.dependentRelationship
+          );
+          if (dep.dependentName.trim() && !existingDep) {
+            try {
+              const depDob = `${dep.dependentDOBYear}-${dep.dependentDOBMonth.padStart(2, '0')}-${dep.dependentDOBDay.padStart(2, '0')}`;
+              await addDependent(pin, {
+                DependentName: dep.dependentName,
+                DepenedentRelationship: dep.dependentRelationship,
+                DependentDOB: depDob,
+                DependentCitizenship: dep.dependentCitizenship,
+                DependentPermanentDisability: dep.permanentDisability,
+              });
+            } catch (depErr: any) {
+              depErrors.push(dep.dependentName + ': ' + (depErr.message || 'Failed'));
+            }
+          }
+        }
+        if (depErrors.length > 0) {
+          Alert.alert('Warning', 'Member updated but some dependents failed:\n' + depErrors.join('\n'));
+        }
+        setSubmitted(true);
+        await loadData();
+      } else {
+        Alert.alert('Error', result.error || 'Failed to update member');
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Connection Error', 'Could not connect to server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── LOADING ──
+  if (apiLoading) {
+    return (
+      <View style={[styles.outerContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#3aaa35" />
+        <Text style={{ marginTop: 12, color: '#888' }}>Loading member data...</Text>
+      </View>
+    );
+  }
 
   // ── SUCCESS ──
   if (submitted) {
@@ -178,7 +309,7 @@ export default function RevalidationScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-              <Text style={styles.submittedName}>{source?.memberName}</Text>
+              <Text style={styles.submittedName}>{member?.MemberName}</Text>
               <Text style={styles.submittedDate}>Application Submitted on {submittedOn}</Text>
             </View>
           </View>
@@ -189,7 +320,7 @@ export default function RevalidationScreen() {
             <View style={styles.activityItem}>
               <View style={styles.activityLeft}>
                 <Text style={styles.activityPin}>{pin}</Text>
-                <Text style={styles.activityName}>{source?.memberName}</Text>
+                <Text style={styles.activityName}>{member?.MemberName}</Text>
                 <Text style={styles.activityDate}>Application Submitted on {submittedOn}</Text>
               </View>
               <View style={styles.activityBtns}>
@@ -222,7 +353,7 @@ export default function RevalidationScreen() {
             <Text style={styles.sectionLabel}>Submitted Forms</Text>
             <View style={styles.submittedCard}>
               <Text style={styles.submittedPin}>{pin}</Text>
-              <Text style={styles.submittedName}>{source?.memberName}</Text>
+              <Text style={styles.submittedName}>{member?.MemberName}</Text>
               <Text style={styles.submittedDate}>Application Submitted on {submittedOn}</Text>
               <View style={styles.downloadPrintRow}>
                 <TouchableOpacity style={styles.downloadBtn}><Text style={styles.downloadBtnText}>↓ Download Form</Text></TouchableOpacity>
@@ -232,45 +363,46 @@ export default function RevalidationScreen() {
           </View>
           <View style={styles.formBody}>
             <Text style={styles.sectionHeading}>I. Personal Details</Text>
-            <ReadField label="Preferred Konsulta Provider" value={source?.konSulTaProvider} placeholder="—" />
-            <ReadField label="Member Name" value={source?.memberName} placeholder="—" />
-            <ReadField label="Mother's Maiden Name" value={source?.motherMaidenName} placeholder="—" />
-            <ReadField label="Spouse Name" value={source?.spouseName} placeholder="—" />
-            <ReadField label="Date of Birth" value={source?.dateOfBirth} placeholder="—" />
-            <ReadField label="Place of Birth" value={source?.placeOfBirth} placeholder="—" isDropdown />
+            <ReadField label="Preferred Konsulta Provider" value={member?.KonSultaProvider} placeholder="—" />
+            <ReadField label="Member Name" value={member?.MemberName} placeholder="—" />
+            <ReadField label="Mother's Maiden Name" value={member?.MotherMaidenName} placeholder="—" />
+            <ReadField label="Spouse Name" value={member?.SpouseName} placeholder="—" />
+            <ReadField label="Date of Birth" value={member?.DateOfBirth} placeholder="—" />
+            <ReadField label="Place of Birth" value={member?.PlaceOfBirth} placeholder="—" isDropdown />
             <Field label="Sex">
               <View style={styles.toggleRow}>
                 {['Female', 'Male'].map(opt => (
-                  <View key={opt} style={[styles.toggleBtn, source?.sex === opt && styles.toggleBtnActive]}>
-                    <Text style={[styles.toggleText, source?.sex === opt && styles.toggleTextActive]}>{opt}</Text>
+                  <View key={opt} style={[styles.toggleBtn, member?.Sex === opt && styles.toggleBtnActive]}>
+                    <Text style={[styles.toggleText, member?.Sex === opt && styles.toggleTextActive]}>{opt}</Text>
                   </View>
                 ))}
               </View>
             </Field>
-            <ReadField label="Civil Status" value={source?.civilStatus} placeholder="—" isDropdown />
-            <ReadField label="Citizenship" value={source?.citizenship} placeholder="—" isDropdown />
-            <ReadField label="Philsys ID Number" value={source?.philSysIDNum} placeholder="—" />
-            <ReadField label="Tax Payer Identification Number" value={source?.tin} placeholder="—" />
+            <ReadField label="Civil Status" value={member?.CivilStatus} placeholder="—" isDropdown />
+            <ReadField label="Citizenship" value={member?.Citizenship} placeholder="—" isDropdown />
+            <ReadField label="Philsys ID Number" value={member?.PhilSysIDNum} placeholder="—" />
+            <ReadField label="Tax Payer Identification Number" value={member?.TIN} placeholder="—" />
             <Text style={styles.sectionHeading}>II. Address And Contact Details</Text>
-            <ReadField label="Permanent Address" value={source?.permanentAddress} placeholder="—" />
-            <ReadField label="Mailing Address" value={source?.mailingAddress} placeholder="—" />
-            <ReadField label="Home Phone Number" value={source?.homePhoneNum} placeholder="—" />
-            <ReadField label="Mobile Number" value={source?.mobileNum} placeholder="—" />
-            <ReadField label="Business (Direct Line)" value={source?.businessDirectLine} placeholder="—" />
-            <ReadField label="Email Address" value={source?.emailAddress} placeholder="—" />
+            <ReadField label="Permanent Address" value={member?.PermanentAddress} placeholder="—" />
+            <ReadField label="Mailing Address" value={member?.MailingAddress} placeholder="—" />
+            <ReadField label="Home Phone Number" value={member?.HomePhoneNum} placeholder="—" />
+            <ReadField label="Mobile Number" value={member?.MobileNum} placeholder="—" />
+            <ReadField label="Business (Direct Line)" value={member?.BusinessDirectLine} placeholder="—" />
+            <ReadField label="Email Address" value={member?.EmailAddress} placeholder="—" />
             <Text style={styles.sectionHeading}>III. Profession</Text>
-            <ReadField label="Monthly Income" value={source?.monthlyIncome ? `₱${parseFloat(source.monthlyIncome).toLocaleString()}` : '—'} placeholder="—" />
-            <ReadField label="Profession" value={source?.profession} placeholder="—" />
-            <ReadField label="Proof of Income" value={source?.proofOfIncome} placeholder="—" />
-            <ReadField label="Member Type" value={getProfessionLabel(source?.professionID ?? '')} placeholder="—" />
-            {getDependentsByPin(pin).length > 0 && (
+            <ReadField label="Monthly Income" value={member?.MonthlyIncome ? `₱${parseFloat(member.MonthlyIncome).toLocaleString()}` : '—'} placeholder="—" />
+            <ReadField label="Profession" value={member?.Profession} placeholder="—" />
+            <ReadField label="Proof of Income" value={member?.ProofOfIncome} placeholder="—" />
+            <ReadField label="Member Type" value={getProfessionLabel(member?.ProfessionID ?? '')} placeholder="—" />
+            {dependents.length > 0 && (
               <>
                 <Text style={styles.sectionHeading}>IV. Dependents</Text>
-                {getDependentsByPin(pin).map((dep, i) => (
+                {dependents.map((dep, i) => (
                   <View key={i} style={styles.dependentCard}>
-                    <Text style={styles.dependentTitle}>{dep.dependentName}</Text>
-                    <Text style={styles.depDetail}>{dep.dependentRelationship} · {dep.dependentDOB} · {dep.dependentCitizenship}</Text>
-                    <Text style={styles.depDetail}>Permanent Disability: {dep.dependentPermanentDisability}</Text>
+                    <Text style={styles.dependentTitle}>{dep.DependentName}</Text>
+                    {/* DepenedentRelationship  */}
+                    <Text style={styles.depDetail}>{dep.DepenedentRelationship} · {dep.DependentDOB} · {dep.DependentCitizenship}</Text>
+                    <Text style={styles.depDetail}>Permanent Disability: {dep.DependentPermanentDisability}</Text>
                   </View>
                 ))}
               </>
@@ -307,19 +439,19 @@ export default function RevalidationScreen() {
         {step === 0 && (
           <View style={styles.formBody}>
             <Text style={styles.sectionHeading}>I. Personal Details</Text>
-            <Field label="Preferred Konsulta Provider"><TextInput style={styles.input} value={form.konSulTaProvider} onChangeText={v => update('konSulTaProvider', v)} placeholderTextColor="#bbb" /></Field>
-            <Field label="Member Name"><TextInput style={styles.input} value={form.memberName} onChangeText={v => update('memberName', v)} placeholderTextColor="#bbb" /></Field>
-            <Field label="Mother's Maiden Name"><TextInput style={styles.input} value={form.motherMaidenName} onChangeText={v => update('motherMaidenName', v)} placeholderTextColor="#bbb" /></Field>
-            <Field label="Spouse Name"><TextInput style={styles.input} value={form.spouseName} onChangeText={v => update('spouseName', v)} placeholderTextColor="#bbb" /></Field>
+            <Field label="Preferred Konsulta Provider"><TextInput style={styles.input} value={form.konSulTaProvider} onChangeText={(v: string) => update('konSulTaProvider', v)} placeholderTextColor="#bbb" /></Field>
+            <Field label="Member Name"><TextInput style={styles.input} value={form.memberName} onChangeText={(v: string) => update('memberName', v)} placeholderTextColor="#bbb" /></Field>
+            <Field label="Mother's Maiden Name"><TextInput style={styles.input} value={form.motherMaidenName} onChangeText={(v: string) => update('motherMaidenName', v)} placeholderTextColor="#bbb" /></Field>
+            <Field label="Spouse Name"><TextInput style={styles.input} value={form.spouseName} onChangeText={(v: string) => update('spouseName', v)} placeholderTextColor="#bbb" /></Field>
             <Field label="Date of Birth">
               <View style={styles.triRow}>
-                <TextInput style={[styles.input, styles.triInput]} placeholder="Year" placeholderTextColor="#bbb" value={form.dobYear} onChangeText={v => update('dobYear', v)} keyboardType="numeric" />
-                <TextInput style={[styles.input, styles.triInput]} placeholder="Month" placeholderTextColor="#bbb" value={form.dobMonth} onChangeText={v => update('dobMonth', v)} keyboardType="numeric" />
-                <TextInput style={[styles.input, styles.triInput]} placeholder="Day" placeholderTextColor="#bbb" value={form.dobDay} onChangeText={v => update('dobDay', v)} keyboardType="numeric" />
+                <TextInput style={[styles.input, styles.triInput]} placeholder="Year" placeholderTextColor="#bbb" value={form.dobYear} onChangeText={(v: string) => update('dobYear', v)} keyboardType="numeric" />
+                <TextInput style={[styles.input, styles.triInput]} placeholder="Month" placeholderTextColor="#bbb" value={form.dobMonth} onChangeText={(v: string) => update('dobMonth', v)} keyboardType="numeric" />
+                <TextInput style={[styles.input, styles.triInput]} placeholder="Day" placeholderTextColor="#bbb" value={form.dobDay} onChangeText={(v: string) => update('dobDay', v)} keyboardType="numeric" />
               </View>
             </Field>
             <Field label="Place of Birth">
-              <View style={styles.dropdownBox}><TextInput style={styles.dropdownInput} value={form.placeOfBirth} onChangeText={v => update('placeOfBirth', v)} placeholderTextColor="#bbb" /><Text style={styles.dropdownCaret}>⌄</Text></View>
+              <View style={styles.dropdownBox}><TextInput style={styles.dropdownInput} value={form.placeOfBirth} onChangeText={(v: string) => update('placeOfBirth', v)} placeholderTextColor="#bbb" /><Text style={styles.dropdownCaret}>⌄</Text></View>
             </Field>
             <Field label="Sex">
               <View style={styles.toggleRow}>
@@ -331,32 +463,32 @@ export default function RevalidationScreen() {
               </View>
             </Field>
             <Field label="Civil Status">
-              <View style={styles.dropdownBox}><TextInput style={styles.dropdownInput} value={form.civilStatus} onChangeText={v => update('civilStatus', v)} placeholderTextColor="#bbb" /><Text style={styles.dropdownCaret}>⌄</Text></View>
+              <View style={styles.dropdownBox}><TextInput style={styles.dropdownInput} value={form.civilStatus} onChangeText={(v: string) => update('civilStatus', v)} placeholderTextColor="#bbb" /><Text style={styles.dropdownCaret}>⌄</Text></View>
             </Field>
             <Field label="Citizenship">
-              <View style={styles.dropdownBox}><TextInput style={styles.dropdownInput} value={form.citizenship} onChangeText={v => update('citizenship', v)} placeholderTextColor="#bbb" /><Text style={styles.dropdownCaret}>⌄</Text></View>
+              <View style={styles.dropdownBox}><TextInput style={styles.dropdownInput} value={form.citizenship} onChangeText={(v: string) => update('citizenship', v)} placeholderTextColor="#bbb" /><Text style={styles.dropdownCaret}>⌄</Text></View>
             </Field>
-            <Field label="Philsys ID Number (Optional)"><TextInput style={styles.input} value={form.philSysIDNum} onChangeText={v => update('philSysIDNum', v)} placeholderTextColor="#bbb" /></Field>
-            <Field label="Tax Payer Identification Number (Optional)"><TextInput style={styles.input} value={form.tin} onChangeText={v => update('tin', v)} placeholderTextColor="#bbb" /></Field>
+            <Field label="Philsys ID Number (Optional)"><TextInput style={styles.input} value={form.philSysIDNum} onChangeText={(v: string) => update('philSysIDNum', v)} placeholderTextColor="#bbb" /></Field>
+            <Field label="Tax Payer Identification Number (Optional)"><TextInput style={styles.input} value={form.tin} onChangeText={(v: string) => update('tin', v)} placeholderTextColor="#bbb" /></Field>
 
             <Text style={styles.sectionHeading}>II. Address And Contact Details</Text>
-            <Field label="Permanent Address"><TextInput style={styles.input} value={form.permanentAddress} onChangeText={v => update('permanentAddress', v)} placeholderTextColor="#bbb" /></Field>
+            <Field label="Permanent Address"><TextInput style={styles.input} value={form.permanentAddress} onChangeText={(v: string) => update('permanentAddress', v)} placeholderTextColor="#bbb" /></Field>
             <Field label="Mailing Address">
-              <TextInput style={styles.input} value={form.mailingAddress} onChangeText={v => update('mailingAddress', v)} placeholderTextColor="#bbb" />
+              <TextInput style={styles.input} value={form.mailingAddress} onChangeText={(v: string) => update('mailingAddress', v)} placeholderTextColor="#bbb" />
               <TouchableOpacity style={styles.checkRow} onPress={() => update('sameAsPermanent', !form.sameAsPermanent)}>
                 <View style={[styles.checkbox, form.sameAsPermanent && styles.checkboxChecked]}>{form.sameAsPermanent && <Text style={styles.checkMark}>✓</Text>}</View>
                 <Text style={styles.checkLabel}>Same as Permanent Address</Text>
               </TouchableOpacity>
             </Field>
-            <Field label="Home Phone Number"><TextInput style={styles.input} value={form.homePhoneNum} onChangeText={v => update('homePhoneNum', v)} keyboardType="phone-pad" placeholderTextColor="#bbb" /></Field>
-            <Field label="Mobile Number"><TextInput style={styles.input} value={form.mobileNum} onChangeText={v => update('mobileNum', v)} keyboardType="phone-pad" placeholderTextColor="#bbb" /></Field>
-            <Field label="Business (Direct Line)"><TextInput style={styles.input} value={form.businessDirectLine} onChangeText={v => update('businessDirectLine', v)} keyboardType="phone-pad" placeholderTextColor="#bbb" /></Field>
-            <Field label="Email Address"><TextInput style={styles.input} value={form.emailAddress} onChangeText={v => update('emailAddress', v)} keyboardType="email-address" autoCapitalize="none" placeholderTextColor="#bbb" /></Field>
+            <Field label="Home Phone Number"><TextInput style={styles.input} value={form.homePhoneNum} onChangeText={(v: string) => update('homePhoneNum', v)} keyboardType="phone-pad" placeholderTextColor="#bbb" /></Field>
+            <Field label="Mobile Number"><TextInput style={styles.input} value={form.mobileNum} onChangeText={(v: string) => update('mobileNum', v)} keyboardType="phone-pad" placeholderTextColor="#bbb" /></Field>
+            <Field label="Business (Direct Line)"><TextInput style={styles.input} value={form.businessDirectLine} onChangeText={(v: string) => update('businessDirectLine', v)} keyboardType="phone-pad" placeholderTextColor="#bbb" /></Field>
+            <Field label="Email Address"><TextInput style={styles.input} value={form.emailAddress} onChangeText={(v: string) => update('emailAddress', v)} keyboardType="email-address" autoCapitalize="none" placeholderTextColor="#bbb" /></Field>
 
             <Text style={styles.sectionHeading}>III. Profession</Text>
             <Text style={styles.subHeading}>Employment Information</Text>
-            <Field label="Monthly Income"><TextInput style={styles.input} value={form.monthlyIncome} onChangeText={v => update('monthlyIncome', v)} keyboardType="numeric" placeholderTextColor="#bbb" /></Field>
-            <Field label="Profession"><TextInput style={styles.input} value={form.profession} onChangeText={v => update('profession', v)} placeholderTextColor="#bbb" /></Field>
+            <Field label="Monthly Income"><TextInput style={styles.input} value={form.monthlyIncome} onChangeText={(v: string) => update('monthlyIncome', v)} keyboardType="numeric" placeholderTextColor="#bbb" /></Field>
+            <Field label="Profession"><TextInput style={styles.input} value={form.profession} onChangeText={(v: string) => update('profession', v)} placeholderTextColor="#bbb" /></Field>
             <Field label="Proof of Income">
               <View style={styles.proofBox}>
                 <Text style={styles.proofText}>{form.proofOfIncome || 'Certificate of Employment, Bank Statements, ITR'}</Text>
@@ -373,23 +505,23 @@ export default function RevalidationScreen() {
         {step === 1 && (
           <View style={styles.formBody}>
             <Text style={styles.sectionHeading}>IV. Declaration of Dependents</Text>
-            {dependents.map((dep, i) => (
+            {formDependents.map((dep: any, i: number) => (
               <View key={i} style={styles.dependentCard}>
                 <View style={styles.dependentHeader}>
                   <Text style={styles.dependentTitle}>Dependent {i + 1}</Text>
                   {i > 0 && <TouchableOpacity onPress={() => removeDep(i)}><Text style={styles.removeText}>Remove</Text></TouchableOpacity>}
                 </View>
-                <Field label="Dependent Name"><TextInput style={styles.input} value={dep.dependentName} onChangeText={v => updateDep(i, 'dependentName', v)} placeholderTextColor="#bbb" /></Field>
-                <Field label="Relationship with Member"><TextInput style={styles.input} value={dep.dependentRelationship} onChangeText={v => updateDep(i, 'dependentRelationship', v)} placeholderTextColor="#bbb" /></Field>
+                <Field label="Dependent Name"><TextInput style={styles.input} value={dep.dependentName} onChangeText={(v: string) => updateDep(i, 'dependentName', v)} placeholderTextColor="#bbb" /></Field>
+                <Field label="Relationship with Member"><TextInput style={styles.input} value={dep.dependentRelationship} onChangeText={(v: string) => updateDep(i, 'dependentRelationship', v)} placeholderTextColor="#bbb" /></Field>
                 <Field label="Date of Birth">
                   <View style={styles.triRow}>
-                    <TextInput style={[styles.input, styles.triInput]} placeholder="Year" placeholderTextColor="#bbb" value={dep.dependentDOBYear} onChangeText={v => updateDep(i, 'dependentDOBYear', v)} keyboardType="numeric" />
-                    <TextInput style={[styles.input, styles.triInput]} placeholder="Month" placeholderTextColor="#bbb" value={dep.dependentDOBMonth} onChangeText={v => updateDep(i, 'dependentDOBMonth', v)} keyboardType="numeric" />
-                    <TextInput style={[styles.input, styles.triInput]} placeholder="Day" placeholderTextColor="#bbb" value={dep.dependentDOBDay} onChangeText={v => updateDep(i, 'dependentDOBDay', v)} keyboardType="numeric" />
+                    <TextInput style={[styles.input, styles.triInput]} placeholder="Year" placeholderTextColor="#bbb" value={dep.dependentDOBYear} onChangeText={(v: string) => updateDep(i, 'dependentDOBYear', v)} keyboardType="numeric" />
+                    <TextInput style={[styles.input, styles.triInput]} placeholder="Month" placeholderTextColor="#bbb" value={dep.dependentDOBMonth} onChangeText={(v: string) => updateDep(i, 'dependentDOBMonth', v)} keyboardType="numeric" />
+                    <TextInput style={[styles.input, styles.triInput]} placeholder="Day" placeholderTextColor="#bbb" value={dep.dependentDOBDay} onChangeText={(v: string) => updateDep(i, 'dependentDOBDay', v)} keyboardType="numeric" />
                   </View>
                 </Field>
                 <Field label="Citizenship">
-                  <View style={styles.dropdownBox}><TextInput style={styles.dropdownInput} value={dep.dependentCitizenship} onChangeText={v => updateDep(i, 'dependentCitizenship', v)} placeholderTextColor="#bbb" /><Text style={styles.dropdownCaret}>⌄</Text></View>
+                  <View style={styles.dropdownBox}><TextInput style={styles.dropdownInput} value={dep.dependentCitizenship} onChangeText={(v: string) => updateDep(i, 'dependentCitizenship', v)} placeholderTextColor="#bbb" /><Text style={styles.dropdownCaret}>⌄</Text></View>
                 </Field>
                 <Field label="Permanent Disability?">
                   <View style={styles.toggleRow}>
@@ -403,7 +535,50 @@ export default function RevalidationScreen() {
               </View>
             ))}
             <TouchableOpacity style={styles.addDependentBtn} onPress={addDep}><Text style={styles.addDependentText}>+ Add Dependent</Text></TouchableOpacity>
-            <BottomActions leftLabel="Update Dependents" rightLabel="Continue" onLeft={() => Alert.alert('Saved', 'Dependents saved.')} onRight={() => setStep(2)} agreeTerms={agreeTerms} agreeConsent={agreeConsent} onToggleTerms={() => setAgreeTerms(!agreeTerms)} onToggleConsent={() => setAgreeConsent(!agreeConsent)} />
+            <BottomActions
+              leftLabel="Update Dependents"
+              rightLabel="Continue"
+              onLeft={async () => {
+                setLoading(true);
+                let savedCount = 0;
+                try {
+                  for (const dep of formDependents) {
+                    const existingDep = dependents.find((d: any) =>
+                      d.DependentName === dep.dependentName &&
+                      d.DepenedentRelationship === dep.dependentRelationship
+                    );
+                    if (dep.dependentName.trim() && !existingDep) {
+                      const depDob = `${dep.dependentDOBYear}-${dep.dependentDOBMonth.padStart(2, '0')}-${dep.dependentDOBDay.padStart(2, '0')}`;
+                      await addDependent(pin, {
+                        DependentName: dep.dependentName,
+                        DepenedentRelationship: dep.dependentRelationship,
+                        DependentDOB: depDob,
+                        DependentCitizenship: dep.dependentCitizenship,
+                        DependentPermanentDisability: dep.permanentDisability,
+                      });
+                      savedCount++;
+                    }
+                  }
+                  if (savedCount > 0) {
+                    Alert.alert('Saved', `${savedCount} dependent(s) saved to database.`);
+                  } else {
+                    Alert.alert('No Changes', 'No new dependents to save.');
+                  }
+                  await loadData();
+                } catch (err: any) {
+                  console.error('Save dependents error:', err);
+                  Alert.alert('Error', err.message || 'Failed to save dependents. Please try again.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              onRight={() => setStep(2)}
+              agreeTerms={agreeTerms}
+              agreeConsent={agreeConsent}
+              onToggleTerms={() => setAgreeTerms(!agreeTerms)}
+              onToggleConsent={() => setAgreeConsent(!agreeConsent)}
+              loading={loading}
+            />
           </View>
         )}
 
@@ -412,12 +587,18 @@ export default function RevalidationScreen() {
           <View style={styles.formBody}>
             <Text style={styles.sectionHeading}>IV. Member Type</Text>
             <Text style={styles.subHeading}>Employment Information</Text>
-            <Field label="Profession ID"><TextInput style={styles.input} value={form.professionID} onChangeText={v => update('professionID', v)} placeholderTextColor="#bbb" /></Field>
+            <Field label="Profession ID"><TextInput style={styles.input} value={form.professionID} onChangeText={(v: string) => update('professionID', v)} placeholderTextColor="#bbb" /></Field>
             <Field label="Member Type/Profession">
               <View style={styles.memberTypeOptions}>
-                {PROFESSIONS.map(p => (
-                  <TouchableOpacity key={p.professionID} style={[styles.memberTypeBtn, form.professionID === p.professionID && styles.memberTypeBtnActive]} onPress={() => { update('professionID', p.professionID); update('memberType', p.memberType); }}>
-                    <Text style={[styles.memberTypeText, form.professionID === p.professionID && styles.memberTypeTextActive]}>{p.memberType}</Text>
+                {[
+                  { id: 'P001', label: 'Employed Private' },
+                  { id: 'P002', label: 'Employed Government' },
+                  { id: 'P003', label: 'Self-Earning Individual' },
+                  { id: 'P004', label: 'Sole Proprietor' },
+                  { id: 'P005', label: 'Professional Practitioner' },
+                ].map(p => (
+                  <TouchableOpacity key={p.id} style={[styles.memberTypeBtn, form.professionID === p.id && styles.memberTypeBtnActive]} onPress={() => { update('professionID', p.id); update('memberType', p.label); }}>
+                    <Text style={[styles.memberTypeText, form.professionID === p.id && styles.memberTypeTextActive]}>{p.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -461,7 +642,9 @@ export default function RevalidationScreen() {
               </TouchableOpacity>
               <View style={styles.confirmBtnRow}>
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => setStep(2)}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.submitBtn} onPress={() => setSubmitted(true)}><Text style={styles.submitText}>Update Membership Form</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.submitBtn} onPress={handleUpdateSubmit} disabled={loading}>
+                  {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.submitText}>Update Membership Form</Text>}
+                </TouchableOpacity>
               </View>
             </View>
           </View>

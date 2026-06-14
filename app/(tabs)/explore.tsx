@@ -1,10 +1,10 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState, useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, Image, useWindowDimensions } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, Image, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { authStore } from '@/stores/auth-store';
-import { MEMBERS, getProfessionLabel } from '@/stores/member-data';
+import { fetchMember } from '@/stores/api';
 
 // ── Image Carousel Component ──────────────────────────────────
 const BANNER_IMAGES = [
@@ -81,12 +81,36 @@ function ImageCarousel() {
 export default function DashboardScreen() {
   const router = useRouter();
   const pin = authStore.getPin();
-  const member = MEMBERS[pin];
   const [menuOpen, setMenuOpen] = useState(false);
+  const [member, setMember] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const firstName = member?.memberName.split(' ')[0] ?? '';
-  const lastName = member?.memberName.split(' ').slice(1).join(' ') ?? '';
-  const professionLabel = member ? getProfessionLabel(member.professionID) : '';
+  // Fetch member from API
+  useEffect(() => {
+    if (pin) {
+      fetchMember(pin).then(data => {
+        if (!data.error) setMember(data);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [pin]);
+
+  const getProfessionLabel = (profID: string) => {
+    const map: Record<string, string> = {
+      'P001': 'Employed Private',
+      'P002': 'Employed Government',
+      'P003': 'Self-Earning Individual',
+      'P004': 'Sole Proprietor',
+      'P005': 'Professional Practitioner',
+    };
+    return map[profID] || profID || '—';
+  };
+
+  const firstName = member?.MemberName?.split(' ')[0] ?? '';
+  const lastName = member?.MemberName?.split(' ').slice(1).join(' ') ?? '';
+  const professionLabel = member ? getProfessionLabel(member.ProfessionID) : '';
 
   const membershipActions = [
     { icon: 'file-document-edit-outline', label: 'New Membership\nRegistration Form', onPress: () => router.push('/(tabs)/form') },
@@ -98,15 +122,22 @@ export default function DashboardScreen() {
     { icon: 'frequently-asked-questions', label: 'FAQs',                 onPress: () => router.push('/(tabs)/faqs' as any) },
   ];
 
-  const initials = member?.memberName.split(' ').map(w => w[0]).slice(0, 2).join('') ?? '?';
+  const initials = member?.MemberName?.split(' ').map((w: string) => w[0]).slice(0, 2).join('') ?? '?';
+
+  if (loading) {
+    return (
+      <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#3aaa35" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>
-      {/* Slide-out Menu Drawer - matching pic 7 */}
+      {/* Slide-out Menu Drawer */}
       <Modal visible={menuOpen} animationType="none" transparent onRequestClose={() => setMenuOpen(false)}>
         <TouchableOpacity style={styles.drawerOverlay} activeOpacity={1} onPress={() => setMenuOpen(false)}>
           <View style={styles.drawer}>
-            {/* User header with gradient - matching pic 7 */}
             <LinearGradient
               colors={['#3aaa35', '#7dc142', '#c8e04a']}
               start={{ x: 0, y: 0 }}
@@ -116,7 +147,7 @@ export default function DashboardScreen() {
                 <Text style={styles.drawerAvatarText}>{initials}</Text>
               </View>
               <View style={styles.drawerUserInfo}>
-                <Text style={styles.drawerUserName}>{member?.memberName ?? '—'}</Text>
+                <Text style={styles.drawerUserName}>{member?.MemberName ?? '—'}</Text>
                 <Text style={styles.drawerUserPin}>{pin}</Text>
               </View>
             </LinearGradient>
@@ -172,7 +203,7 @@ export default function DashboardScreen() {
           <Text style={styles.welcomeGreeting}>Mabuhay {firstName}{'\n'}{lastName}!</Text>
           <Text style={styles.welcomeSub}>Welcome to your PhilHealth Dashboard!</Text>
           <Text style={styles.locationText}>
-            📍 {member?.permanentAddress ?? ''}
+            📍 {member?.PermanentAddress ?? ''}
           </Text>
         </LinearGradient>
 
@@ -190,7 +221,7 @@ export default function DashboardScreen() {
           <View style={styles.memberStripDivider} />
           <View style={styles.memberStripItem}>
             <Text style={styles.memberStripLabel}>Purpose</Text>
-            <Text style={styles.memberStripValue}>{member?.purpose ?? '—'}</Text>
+            <Text style={styles.memberStripValue}>{member?.Purpose ?? '—'}</Text>
           </View>
         </View>
 
@@ -265,11 +296,11 @@ export default function DashboardScreen() {
           <View style={styles.activityItem}>
             <View style={styles.activityLeft}>
               <Text style={styles.activityPin}>{pin}</Text>
-              <Text style={styles.activityName}>{member?.memberName}</Text>
-              <Text style={styles.activityPurpose}>{member?.purpose}</Text>
+              <Text style={styles.activityName}>{member?.MemberName}</Text>
+              <Text style={styles.activityPurpose}>{member?.Purpose}</Text>
             </View>
-            <View style={[styles.purposeBadge, member?.purpose === 'Updating/Amendment' && styles.purposeBadgeAmend]}>
-              <Text style={styles.purposeBadgeText}>{member?.purpose === 'Updating/Amendment' ? 'Update' : 'Registration'}</Text>
+            <View style={[styles.purposeBadge, member?.Purpose === 'Updating/Amendment' && styles.purposeBadgeAmend]}>
+              <Text style={styles.purposeBadgeText}>{member?.Purpose === 'Updating/Amendment' ? 'Update' : 'Registration'}</Text>
             </View>
           </View>
         </View>
@@ -277,7 +308,7 @@ export default function DashboardScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Bottom Nav — Home is active (matching pic 5) */}
+      {/* Bottom Nav */}
       <View style={styles.bottomNavContainer}>
         <View style={styles.bottomNav}>
           {[
@@ -305,7 +336,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#fafafa' },
   container: { flex: 1 },
 
-  // Drawer — floating card style matching pic 7
+  // Drawer
   drawerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', flexDirection: 'row' },
   drawer: { 
     width: 280, 
@@ -428,7 +459,7 @@ const styles = StyleSheet.create({
   purposeBadgeAmend: { backgroundColor: '#fff8e1' },
   purposeBadgeText: { fontSize: 11, color: '#3aaa35', fontWeight: '700' },
 
-  // Bottom Nav — compact rounded style
+  // Bottom Nav
   bottomNavContainer: {
     position: 'absolute',
     bottom: 16,
