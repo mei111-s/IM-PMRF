@@ -226,6 +226,13 @@ export default function RevalidationScreen() {
           if (dep.dependentName.trim() && !existingDep) {
             try {
               const depDob = `${dep.dependentDOBYear}-${dep.dependentDOBMonth.padStart(2, '0')}-${dep.dependentDOBDay.padStart(2, '0')}`;
+              console.log('Adding dependent:', pin, {
+                DependentName: dep.dependentName,
+                DepenedentRelationship: dep.dependentRelationship,
+                DependentDOB: depDob,
+                DependentCitizenship: dep.dependentCitizenship,
+                DependentPermanentDisability: dep.permanentDisability,
+              });
               await addDependent(pin, {
                 DependentName: dep.dependentName,
                 DepenedentRelationship: dep.dependentRelationship,

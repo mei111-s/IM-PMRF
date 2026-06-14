@@ -1,19 +1,20 @@
-import { useState } from 'react';
+import { addMember } from '@/stores/api';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  FlatList,
+  Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Image,
-  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useRouter } from 'expo-router';
-import { addMember, addDependent } from '@/stores/api';
 
 type Dependent = {
   dependentName: string;
@@ -64,6 +65,125 @@ function ReviewField({ label, value, placeholder, isDropdown }: { label: string;
   );
 }
 
+// Generic dropdown/select field — opens a modal list of options
+function SelectField({
+  label,
+  value,
+  placeholder,
+  options,
+  onSelect,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  options: string[];
+  onSelect: (v: string) => void;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Field label={label}>
+      <TouchableOpacity
+        style={[styles.dropdownBox, disabled && styles.disabledBox]}
+        onPress={() => !disabled && setOpen(true)}
+        disabled={disabled}>
+        <Text style={{ flex: 1, fontSize: 14, color: value ? '#333' : '#bbb' }}>{value || placeholder}</Text>
+        <Text style={styles.dropdownCaret}>⌄</Text>
+      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>{label}</Text>
+            <FlatList
+              data={options}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.modalOption}
+                  onPress={() => { onSelect(item); setOpen(false); }}>
+                  <Text style={[styles.modalOptionText, item === value && styles.modalOptionTextActive]}>{item}</Text>
+                  {item === value && <Text style={styles.modalCheck}>✓</Text>}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </Field>
+  );
+}
+
+// Month/Day picker pair for Date of Birth
+function MonthDayYearField({
+  label,
+  year,
+  month,
+  day,
+  onChangeYear,
+  onChangeMonth,
+  onChangeDay,
+}: {
+  label: string;
+  year: string;
+  month: string;
+  day: string;
+  onChangeYear: (v: string) => void;
+  onChangeMonth: (v: string) => void;
+  onChangeDay: (v: string) => void;
+}) {
+  const months = Array.from({ length: 12 }, (_, i) => String(i + 1));
+  const days = Array.from({ length: 31 }, (_, i) => String(i + 1));
+
+  return (
+    <Field label={label}>
+      <View style={styles.triRow}>
+        <TextInput style={[styles.input, styles.triInput]} placeholder="Year" placeholderTextColor="#bbb"
+          value={year} onChangeText={onChangeYear} keyboardType="numeric" maxLength={4} />
+        <View style={[styles.triInput]}>
+          <InlinePicker placeholder="Month" value={month} options={months} onSelect={onChangeMonth} />
+        </View>
+        <View style={[styles.triInput]}>
+          <InlinePicker placeholder="Day" value={day} options={days} onSelect={onChangeDay} />
+        </View>
+      </View>
+    </Field>
+  );
+}
+
+// Small inline picker used for Month/Day — same visual size as a triInput
+function InlinePicker({ placeholder, value, options, onSelect }: { placeholder: string; value: string; options: string[]; onSelect: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <TouchableOpacity style={[styles.input, styles.triPickerInput]} onPress={() => setOpen(true)}>
+        <Text style={{ fontSize: 14, color: value ? '#333' : '#bbb' }}>{value || placeholder}</Text>
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>{placeholder}</Text>
+            <FlatList
+              data={options}
+              keyExtractor={(item) => item}
+              numColumns={6}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.modalGridOption, item === value && styles.modalGridOptionActive]}
+                  onPress={() => { onSelect(item); setOpen(false); }}>
+                  <Text style={[styles.modalGridOptionText, item === value && styles.modalOptionTextActive]}>{item}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+}
+
 export default function MembershipForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -86,13 +206,15 @@ export default function MembershipForm() {
     mailingAddress: '',
     sameAsPermanent: false,
     homePhoneNum: '',
+    homePhoneNA: false,
     mobileNum: '',
     businessDirectLine: '',
     emailAddress: '',
     monthlyIncome: '',
     profession: '',
     memberType: 'Employed Private',
-    proofOfIncome: 'Certificate of Employment, Bank Statements, Income Tax Return (ITR)',
+    proofOfIncome: 'Certificate of Employment',
+    proofOfIncomeType: '',
     professionID: '',
     agreeTerms: false,
     agreeConsent: false,
@@ -114,6 +236,14 @@ export default function MembershipForm() {
     dependentCitizenship: '', permanentDisability: '',
   }]);
   const removeDependent = (index: number) => setDependents(prev => prev.filter((_, i) => i !== index));
+
+  // Auto-fill Mailing Address with Permanent Address when "Same as Permanent" is checked.
+  // Unchecking clears it back to empty so the user can enter a different address.
+  useEffect(() => {
+    if (form.sameAsPermanent) {
+      setForm(prev => ({ ...prev, mailingAddress: prev.permanentAddress }));
+    }
+  }, [form.sameAsPermanent, form.permanentAddress]);
 
   const handleBack = () => {
     if (step > 0) setStep(step - 1);
@@ -155,17 +285,17 @@ export default function MembershipForm() {
         Sex: form.sex,
         CivilStatus: form.civilStatus,
         Citizenship: form.citizenship,
-        PhilSysIDNum: form.philSysIDNum || null,
-        TIN: form.tin || null,
+        PhilSysIDNum: form.philSysIDNum || 'N/A',
+        TIN: form.tin || 'N/A',
         PermanentAddress: form.permanentAddress,
         MailingAddress: form.mailingAddress || 'SAME AS ABOVE',
-        HomePhoneNum: form.homePhoneNum || 'N/A',
+        HomePhoneNum: form.homePhoneNA ? 'N/A' : (form.homePhoneNum || 'N/A'),
         MobileNum: form.mobileNum,
         BusinessDirectLine: form.businessDirectLine || 'N/A',
         EmailAddress: form.emailAddress,
         MonthlyIncome: form.monthlyIncome,
         Profession: form.profession,
-        ProofOfIncome: form.proofOfIncome,
+        ProofOfIncome: form.proofOfIncomeType || form.proofOfIncome,
         ProfessionID: form.professionID,
       };
 
@@ -178,7 +308,7 @@ export default function MembershipForm() {
           if (dep.dependentName.trim()) {
             const depData = {
               DependentName: dep.dependentName,
-              DependentRelationship: dep.dependentRelationship,
+              DepenedentRelationship: dep.dependentRelationship,
               DependentDOB: formatDate(dep.dependentDOBYear, dep.dependentDOBMonth, dep.dependentDOBDay),
               DependentCitizenship: dep.dependentCitizenship,
               DependentPermanentDisability: dep.permanentDisability,
@@ -274,27 +404,24 @@ export default function MembershipForm() {
                 value={form.konSulTaProvider} onChangeText={v => update('konSulTaProvider', v)} />
             </Field>
             <Field label="Member Name">
-              <TextInput style={styles.input} placeholder="Last Name, First Name, Middle Initial" placeholderTextColor="#bbb"
+              <TextInput style={styles.input} placeholder="First Name, Middle Initial, Last Name" placeholderTextColor="#bbb"
                 value={form.memberName} onChangeText={v => update('memberName', v)} />
             </Field>
             <Field label="Mother's Maiden Name">
-              <TextInput style={styles.input} placeholder="Last Name, First Name, Middle Initial" placeholderTextColor="#bbb"
+              <TextInput style={styles.input} placeholder="First Name, Middle Initial, Last Name" placeholderTextColor="#bbb"
                 value={form.motherMaidenName} onChangeText={v => update('motherMaidenName', v)} />
             </Field>
             <Field label="Spouse Name">
-              <TextInput style={styles.input} placeholder="N/A if not applicable, Last Name, First Name, Middle Initial" placeholderTextColor="#bbb"
+              <TextInput style={styles.input} placeholder="N/A if not applicable, First Name, Middle Initial, Last Name" placeholderTextColor="#bbb"
                 value={form.spouseName} onChangeText={v => update('spouseName', v)} />
             </Field>
-            <Field label="Date of Birth">
-              <View style={styles.triRow}>
-                <TextInput style={[styles.input, styles.triInput]} placeholder="Year" placeholderTextColor="#bbb"
-                  value={form.dobYear} onChangeText={v => update('dobYear', v)} keyboardType="numeric" />
-                <TextInput style={[styles.input, styles.triInput]} placeholder="Month" placeholderTextColor="#bbb"
-                  value={form.dobMonth} onChangeText={v => update('dobMonth', v)} keyboardType="numeric" />
-                <TextInput style={[styles.input, styles.triInput]} placeholder="Day" placeholderTextColor="#bbb"
-                  value={form.dobDay} onChangeText={v => update('dobDay', v)} keyboardType="numeric" />
-              </View>
-            </Field>
+            <MonthDayYearField
+              label="Date of Birth"
+              year={form.dobYear} month={form.dobMonth} day={form.dobDay}
+              onChangeYear={v => update('dobYear', v)}
+              onChangeMonth={v => update('dobMonth', v)}
+              onChangeDay={v => update('dobDay', v)}
+            />
             <Field label="Place of Birth">
               <View style={styles.dropdownBox}>
                 <TextInput style={[styles.dropdownInput]} placeholder="City/Province" placeholderTextColor="#bbb"
@@ -312,25 +439,25 @@ export default function MembershipForm() {
                 ))}
               </View>
             </Field>
-            <Field label="Civil Status">
-              <View style={styles.dropdownBox}>
-                <TextInput style={styles.dropdownInput} placeholder="Select current civil status" placeholderTextColor="#bbb"
-                  value={form.civilStatus} onChangeText={v => update('civilStatus', v)} />
-                <Text style={styles.dropdownCaret}>⌄</Text>
-              </View>
-            </Field>
-            <Field label="Citizenship">
-              <View style={styles.dropdownBox}>
-                <TextInput style={styles.dropdownInput} placeholder="Select current Citizenship/Nationality" placeholderTextColor="#bbb"
-                  value={form.citizenship} onChangeText={v => update('citizenship', v)} />
-                <Text style={styles.dropdownCaret}>⌄</Text>
-              </View>
-            </Field>
-            <Field label="Philsys ID Number (Optional)">
+            <SelectField
+              label="Civil Status"
+              value={form.civilStatus}
+              placeholder="Select current civil status"
+              options={['Single', 'Married', 'Widowed', 'Legally Separated']}
+              onSelect={v => update('civilStatus', v)}
+            />
+            <SelectField
+              label="Citizenship"
+              value={form.citizenship}
+              placeholder="Select current Citizenship/Nationality"
+              options={['Filipino', 'Other']}
+              onSelect={v => update('citizenship', v)}
+            />
+            <Field label="Philsys ID Number">
               <TextInput style={styles.input} placeholder="0000-0000-0000" placeholderTextColor="#bbb"
                 value={form.philSysIDNum} onChangeText={v => update('philSysIDNum', v)} />
             </Field>
-            <Field label="Tax Payer Identification Number (Optional)">
+            <Field label="Tax Payer Identification Number">
               <TextInput style={styles.input} placeholder="000-000-000" placeholderTextColor="#bbb"
                 value={form.tin} onChangeText={v => update('tin', v)} keyboardType="numeric" />
             </Field>
@@ -341,8 +468,11 @@ export default function MembershipForm() {
                 value={form.permanentAddress} onChangeText={v => update('permanentAddress', v)} />
             </Field>
             <Field label="Mailing Address">
-              <TextInput style={styles.input} placeholder="Street, Barangay, City/Province" placeholderTextColor="#bbb"
-                value={form.mailingAddress} onChangeText={v => update('mailingAddress', v)} />
+              <TextInput
+                style={[styles.input, form.sameAsPermanent && styles.disabledBox]}
+                placeholder="Street, Barangay, City/Province" placeholderTextColor="#bbb"
+                value={form.mailingAddress} onChangeText={v => update('mailingAddress', v)}
+                editable={!form.sameAsPermanent} />
             </Field>
             <TouchableOpacity style={styles.checkRow} onPress={() => update('sameAsPermanent', !form.sameAsPermanent)}>
               <View style={[styles.checkbox, form.sameAsPermanent && styles.checkboxChecked]}>
@@ -351,8 +481,20 @@ export default function MembershipForm() {
               <Text style={styles.checkLabel}>Same as Permanent Address</Text>
             </TouchableOpacity>
             <Field label="Home Phone Number">
-              <TextInput style={styles.input} placeholder="09XX-XXX-XXXX" placeholderTextColor="#bbb"
-                value={form.homePhoneNum} onChangeText={v => update('homePhoneNum', v)} keyboardType="phone-pad" />
+              <View style={styles.triRow}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }, form.homePhoneNA && styles.disabledBox]}
+                  placeholder="09XX-XXX-XXXX" placeholderTextColor="#bbb"
+                  value={form.homePhoneNA ? 'N/A' : form.homePhoneNum}
+                  onChangeText={v => update('homePhoneNum', v)}
+                  keyboardType="phone-pad"
+                  editable={!form.homePhoneNA} />
+                <TouchableOpacity
+                  style={[styles.naToggle, form.homePhoneNA && styles.naToggleActive]}
+                  onPress={() => update('homePhoneNA', !form.homePhoneNA)}>
+                  <Text style={[styles.naToggleText, form.homePhoneNA && styles.naToggleTextActive]}>N/A</Text>
+                </TouchableOpacity>
+              </View>
             </Field>
             <Field label="Mobile Number">
               <TextInput style={styles.input} placeholder="09XX-XXX-XXXX" placeholderTextColor="#bbb"
@@ -377,9 +519,16 @@ export default function MembershipForm() {
               <TextInput style={styles.input} placeholder="e.g Doctor, Nurse, Teacher" placeholderTextColor="#bbb"
                 value={form.profession} onChangeText={v => update('profession', v)} />
             </Field>
+            <SelectField
+              label="Proof of Income Type"
+              value={form.proofOfIncomeType ?? ''}
+              placeholder="Select proof of income type"
+              options={['Certificate of Employment', 'Bank Statements', 'ITR', 'PRC License', 'Government Payslip', 'Business Registration']}
+              onSelect={v => update('proofOfIncomeType', v)}
+            />
             <Field label="Proof of Income">
               <View style={styles.proofBox}>
-                <Text style={styles.proofText}>{form.proofOfIncome}</Text>
+                <Text style={styles.proofText}>{form.proofOfIncomeType || form.proofOfIncome}</Text>
                 <TouchableOpacity style={styles.uploadBtn}>
                   <Text style={styles.uploadText}>Upload a File ↑</Text>
                 </TouchableOpacity>
@@ -427,30 +576,27 @@ export default function MembershipForm() {
                   )}
                 </View>
                 <Field label="Dependent Name">
-                  <TextInput style={styles.input} placeholder="Last Name, First Name, Middle Initial" placeholderTextColor="#bbb"
+                  <TextInput style={styles.input} placeholder="First Name, Middle Initial, Last Name" placeholderTextColor="#bbb"
                     value={dep.dependentName} onChangeText={v => updateDependent(index, 'dependentName', v)} />
                 </Field>
                 <Field label="Dependent's Relationship with the Member">
                   <TextInput style={styles.input} placeholder="Family" placeholderTextColor="#bbb"
                     value={dep.dependentRelationship} onChangeText={v => updateDependent(index, 'dependentRelationship', v)} />
                 </Field>
-                <Field label="Date of Birth">
-                  <View style={styles.triRow}>
-                    <TextInput style={[styles.input, styles.triInput]} placeholder="Year" placeholderTextColor="#bbb"
-                      value={dep.dependentDOBYear} onChangeText={v => updateDependent(index, 'dependentDOBYear', v)} keyboardType="numeric" />
-                    <TextInput style={[styles.input, styles.triInput]} placeholder="Month" placeholderTextColor="#bbb"
-                      value={dep.dependentDOBMonth} onChangeText={v => updateDependent(index, 'dependentDOBMonth', v)} keyboardType="numeric" />
-                    <TextInput style={[styles.input, styles.triInput]} placeholder="Day" placeholderTextColor="#bbb"
-                      value={dep.dependentDOBDay} onChangeText={v => updateDependent(index, 'dependentDOBDay', v)} keyboardType="numeric" />
-                  </View>
-                </Field>
-                <Field label="Citizenship">
-                  <View style={styles.dropdownBox}>
-                    <TextInput style={styles.dropdownInput} placeholder="Select current Citizenship/Nationality" placeholderTextColor="#bbb"
-                      value={dep.dependentCitizenship} onChangeText={v => updateDependent(index, 'dependentCitizenship', v)} />
-                    <Text style={styles.dropdownCaret}>⌄</Text>
-                  </View>
-                </Field>
+                <MonthDayYearField
+                  label="Date of Birth"
+                  year={dep.dependentDOBYear} month={dep.dependentDOBMonth} day={dep.dependentDOBDay}
+                  onChangeYear={v => updateDependent(index, 'dependentDOBYear', v)}
+                  onChangeMonth={v => updateDependent(index, 'dependentDOBMonth', v)}
+                  onChangeDay={v => updateDependent(index, 'dependentDOBDay', v)}
+                />
+                <SelectField
+                  label="Citizenship"
+                  value={dep.dependentCitizenship}
+                  placeholder="Select current Citizenship/Nationality"
+                  options={['Filipino', 'Other']}
+                  onSelect={v => updateDependent(index, 'dependentCitizenship', v)}
+                />
                 <Field label="Dependent with Permanent Disability?">
                   <View style={styles.toggleRow}>
                     {['Yes', 'No'].map(opt => (
@@ -496,13 +642,13 @@ export default function MembershipForm() {
               <TextInput style={styles.input} placeholder="P001, P002, P003, P004, or P005" placeholderTextColor="#bbb"
                 value={form.professionID} onChangeText={v => update('professionID', v)} />
             </Field>
-            <Field label="Member Type/Profession">
-              <View style={styles.dropdownBox}>
-                <TextInput style={styles.dropdownInput} placeholder="Employed Private" placeholderTextColor="#bbb"
-                  value={form.memberType} onChangeText={v => update('memberType', v)} />
-                <Text style={styles.dropdownCaret}>⌄</Text>
-              </View>
-            </Field>
+            <SelectField
+              label="Member Type/Profession"
+              value={form.memberType}
+              placeholder="Employed Private"
+              options={['Employed Private', 'Employed Government', 'Self-Earning Individual', 'Sole Proprietor', 'Professional Practitioner']}
+              onSelect={v => update('memberType', v)}
+            />
 
             <View style={styles.bottomActions}>
               <View style={styles.actionBtnRow}>
@@ -532,9 +678,9 @@ export default function MembershipForm() {
 
             <Text style={styles.sectionHeading}>I. Personal Details</Text>
             <ReviewField label="Preferred Konsulta Provider" value={form.konSulTaProvider} placeholder="e.g. Victory Medical Center" />
-            <ReviewField label="Member Name" value={form.memberName} placeholder="Last Name, First Name, Middle Initial" />
-            <ReviewField label="Mother's Maiden Name" value={form.motherMaidenName} placeholder="Last Name, First Name, Middle Initial" />
-            <ReviewField label="Spouse Name" value={form.spouseName} placeholder="N/A if not applicable, Last Name, First Name, Middle Initial" />
+            <ReviewField label="Member Name" value={form.memberName} placeholder="First Name, Middle Initial, Last Name" />
+            <ReviewField label="Mother's Maiden Name" value={form.motherMaidenName} placeholder="First Name, Middle Initial, Last Name" />
+            <ReviewField label="Spouse Name" value={form.spouseName} placeholder="N/A if not applicable, First Name, Middle Initial, Last Name" />
             <Field label="Date of Birth">
               <View style={styles.triRow}>
                 <View style={[styles.input, styles.triInput]}><Text style={{ color: form.dobYear ? '#333' : '#bbb' }}>{form.dobYear || 'Year'}</Text></View>
@@ -554,13 +700,13 @@ export default function MembershipForm() {
             </Field>
             <ReviewField label="Civil Status" value={form.civilStatus} placeholder="Select current civil status" isDropdown />
             <ReviewField label="Citizenship" value={form.citizenship} placeholder="Select current Citizenship/Nationality" isDropdown />
-            <ReviewField label="Philsys ID Number (Optional)" value={form.philSysIDNum} placeholder="0000-0000-0000" />
-            <ReviewField label="Tax Payer Identification Number (Optional)" value={form.tin} placeholder="000-000-000" />
+            <ReviewField label="Philsys ID Number" value={form.philSysIDNum} placeholder="0000-0000-0000" />
+            <ReviewField label="Tax Payer Identification Number" value={form.tin} placeholder="000-000-000" />
 
             <Text style={styles.sectionHeading}>II. Address And Contact Details</Text>
             <ReviewField label="Permanent Address" value={form.permanentAddress} placeholder="Street, Barangay, City/Province" />
             <ReviewField label="Mailing Address" value={form.mailingAddress} placeholder="Street, Barangay, City/Province" />
-            <ReviewField label="Home Phone Number" value={form.homePhoneNum} placeholder="09XX-XXX-XXXX" />
+            <ReviewField label="Home Phone Number" value={form.homePhoneNA ? 'N/A' : form.homePhoneNum} placeholder="09XX-XXX-XXXX" />
             <ReviewField label="Mobile Number:" value={form.mobileNum} placeholder="09XX-XXX-XXXX" />
             <ReviewField label="Business (Direct Line)" value={form.businessDirectLine} placeholder="N/A if not applicable" />
             <ReviewField label="Email Address" value={form.emailAddress} placeholder="email@gmail.com" />
@@ -569,9 +715,10 @@ export default function MembershipForm() {
             <Text style={styles.subHeading}>Employment Information</Text>
             <ReviewField label="Monthly Income" value={form.monthlyIncome} placeholder="e.g. 150000" />
             <ReviewField label="Profession" value={form.profession} placeholder="e.g Doctor, Nurse, Teacher" />
+            <ReviewField label="Proof of Income Type" value={form.proofOfIncomeType} placeholder="Select proof of income type" isDropdown />
             <Field label="Proof of Income">
               <View style={styles.proofBox}>
-                <Text style={styles.proofText}>{form.proofOfIncome}</Text>
+                <Text style={styles.proofText}>{form.proofOfIncomeType || form.proofOfIncome}</Text>
                 <TouchableOpacity style={styles.uploadBtn}>
                   <Text style={styles.uploadText}>Upload a File ↑</Text>
                 </TouchableOpacity>
@@ -589,7 +736,7 @@ export default function MembershipForm() {
                   <View key={index} style={styles.dependentCard}>
                     <Text style={styles.dependentTitle}>Dependent {index + 1}</Text>
                     <Field label="Dependent Name">
-                      <View style={styles.input}><Text style={{ color: dep.dependentName ? '#333' : '#bbb' }}>{dep.dependentName || 'Last Name, First Name, Middle Initial'}</Text></View>
+                      <View style={styles.input}><Text style={{ color: dep.dependentName ? '#333' : '#bbb' }}>{dep.dependentName || 'First Name, Middle Initial, Last Name'}</Text></View>
                     </Field>
                     <Field label="Dependent's Relationship with the Member">
                       <View style={styles.input}><Text style={{ color: '#333' }}>{dep.dependentRelationship}</Text></View>
@@ -706,6 +853,25 @@ const styles = StyleSheet.create({
   dropdownBox: { backgroundColor: '#f0f0f0', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center' },
   dropdownInput: { flex: 1, fontSize: 14, color: '#333' },
   dropdownCaret: { fontSize: 18, color: '#888' },
+
+  disabledBox: { backgroundColor: '#e8e8e8', opacity: 0.7 },
+  triPickerInput: { justifyContent: 'center' },
+
+  naToggle: { borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#f0f0f0', borderWidth: 1.5, borderColor: '#e0e0e0' },
+  naToggleActive: { backgroundColor: '#3aaa35', borderColor: '#3aaa35' },
+  naToggleText: { fontSize: 13, color: '#555', fontWeight: '600' },
+  naToggleTextActive: { color: '#fff' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalSheet: { backgroundColor: '#fff', borderRadius: 12, padding: 16, width: '100%', maxHeight: '60%' },
+  modalTitle: { fontSize: 14, fontWeight: '700', color: '#333', marginBottom: 10 },
+  modalOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  modalOptionText: { fontSize: 14, color: '#333' },
+  modalOptionTextActive: { color: '#3aaa35', fontWeight: '700' },
+  modalCheck: { fontSize: 14, color: '#3aaa35', fontWeight: '700' },
+  modalGridOption: { width: '15%', margin: '0.83%', paddingVertical: 10, borderRadius: 8, backgroundColor: '#f0f0f0', alignItems: 'center' },
+  modalGridOptionActive: { backgroundColor: '#3aaa35' },
+  modalGridOptionText: { fontSize: 13, color: '#333', fontWeight: '500' },
 
   toggleRow: { flexDirection: 'row', gap: 10 },
   toggleBtn: { borderRadius: 8, paddingHorizontal: 24, paddingVertical: 10, backgroundColor: '#f0f0f0', borderWidth: 1.5, borderColor: '#e0e0e0' },
