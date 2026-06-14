@@ -68,6 +68,17 @@ function BottomActions({ leftLabel, rightLabel, onLeft, onRight, agreeTerms, agr
 }
 
 // ── Main ──────────────────────────────────────────────────────
+function formatDisplayDate(raw: string): string {
+  if (!raw) return '—';
+  try {
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return raw;
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  } catch {
+    return raw;
+  }
+}
+
 export default function RevalidationScreen() {
   const router = useRouter();
   const pin = authStore.getPin();
@@ -372,7 +383,7 @@ export default function RevalidationScreen() {
           </View>
           <View style={styles.sectionBlock}>
             <Text style={styles.sectionLabel}>Submitted Forms</Text>
-            <View style={styles.submittedCard}>
+            <View style={[styles.submittedCard, styles.submittedCardAccent]}>
               <Text style={styles.submittedPin}>{pin}</Text>
               <Text style={styles.submittedName}>{member?.MemberName}</Text>
               <Text style={styles.submittedDate}>Application Submitted on {submittedOn}</Text>
@@ -388,7 +399,7 @@ export default function RevalidationScreen() {
             <ReadField label="Member Name" value={member?.MemberName} placeholder="—" />
             <ReadField label="Mother's Maiden Name" value={member?.MotherMaidenName} placeholder="—" />
             <ReadField label="Spouse Name" value={member?.SpouseName} placeholder="—" />
-            <ReadField label="Date of Birth" value={member?.DateOfBirth} placeholder="—" />
+            <ReadField label="Date of Birth" value={member?.DateOfBirth ? formatDisplayDate(member.DateOfBirth) : ''} placeholder="—" />
             <ReadField label="Place of Birth" value={member?.PlaceOfBirth} placeholder="—" isDropdown />
             <Field label="Sex">
               <View style={styles.toggleRow}>
@@ -415,15 +426,26 @@ export default function RevalidationScreen() {
             <ReadField label="Profession" value={member?.Profession} placeholder="—" />
             <ReadField label="Proof of Income" value={member?.ProofOfIncome} placeholder="—" />
             <ReadField label="Member Type" value={getProfessionLabel(member?.ProfessionID ?? '')} placeholder="—" />
+            <Text style={styles.sectionHeading}>IV. Member Type</Text>
+            <Text style={styles.subHeading}>Employment Information</Text>
+            <ReadField label="Profession ID" value={member?.ProfessionID} placeholder="—" />
+            <ReadField label="Member Type/Profession" value={getProfessionLabel(member?.ProfessionID ?? '')} placeholder="—" isDropdown />
             {dependents.length > 0 && (
               <>
                 <Text style={styles.sectionHeading}>IV. Dependents</Text>
                 {dependents.map((dep, i) => (
-                  <View key={i} style={styles.dependentCard}>
-                    <Text style={styles.dependentTitle}>{dep.DependentName}</Text>
-                    {/* DepenedentRelationship  */}
-                    <Text style={styles.depDetail}>{dep.DepenedentRelationship} · {dep.DependentDOB} · {dep.DependentCitizenship}</Text>
-                    <Text style={styles.depDetail}>Permanent Disability: {dep.DependentPermanentDisability}</Text>
+                  <View key={i} style={styles.depViewCard}>
+                    <Text style={styles.depViewName}>{dep.DependentName}</Text>
+                    <Text style={styles.depViewDetail}>
+                      {dep.DepenedentRelationship}
+                      {dep.DependentDOB ? ` · Born ${formatDisplayDate(dep.DependentDOB)}` : ''}
+                    </Text>
+                    <Text style={styles.depViewDetail}>Citizenship: {dep.DependentCitizenship}</Text>
+                    {dep.DependentPermanentDisability === 'Yes' && (
+                      <View style={styles.disabilityBadge}>
+                        <Text style={styles.disabilityBadgeText}>With Permanent Disability</Text>
+                      </View>
+                    )}
                   </View>
                 ))}
               </>
@@ -451,8 +473,43 @@ export default function RevalidationScreen() {
           <Text style={styles.stepSubtitle}>{stepLabel}</Text>
         </View>
         <View style={styles.progressTrackWrap}>
+          {/* Step dots */}
+          <View style={styles.stepDotsRow}>
+            {[0, 1, 2, 3].map(i => (
+              <View key={i} style={styles.stepDotWrap}>
+                {i <= step ? (
+                  <LinearGradient
+                    colors={['#3aaa35', '#7dc142', '#c8e04a']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={styles.stepDotActive}>
+                    <Text style={styles.stepDotActiveText}>{i + 1}</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.stepDotInactive}>
+                    <Text style={styles.stepDotInactiveText}>{i + 1}</Text>
+                  </View>
+                )}
+                {i < 3 && (
+                  <View style={styles.stepConnector}>
+                    {i < step ? (
+                      <LinearGradient
+                        colors={['#3aaa35', '#7dc142']}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                        style={styles.stepConnectorFilled} />
+                    ) : (
+                      <View style={styles.stepConnectorEmpty} />
+                    )}
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+          {/* Gradient progress bar */}
           <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress}%` as any }]} />
+            <LinearGradient
+              colors={['#3aaa35', '#7dc142', '#c8e04a']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={[styles.progressFill, { width: `${progress}%` as any }]} />
           </View>
         </View>
 
@@ -631,6 +688,7 @@ export default function RevalidationScreen() {
         {/* STEP 3: Confirmation */}
         {step === 3 && (
           <View style={styles.formBody}>
+            <Text style={styles.confirmPageTitle}>Update Membership{'\n'}Application Form?</Text>
             <View style={styles.warningBox}>
               <Text style={styles.warningLabel}>⚠ Warning</Text>
               <Text style={styles.warningText}>Before clicking the update and resubmit button, please make sure to double check your information.</Text>
@@ -649,8 +707,38 @@ export default function RevalidationScreen() {
             <ReadField label="Mobile Number" value={form.mobileNum} placeholder="—" />
             <ReadField label="Email Address" value={form.emailAddress} placeholder="—" />
             <Text style={styles.sectionHeading}>III. Profession</Text>
+            <Text style={styles.subHeading}>Employment Information</Text>
             <ReadField label="Monthly Income" value={form.monthlyIncome ? `₱${parseFloat(form.monthlyIncome).toLocaleString()}` : '—'} placeholder="—" />
-            <ReadField label="Member Type" value={getProfessionLabel(form.professionID)} placeholder="—" />
+            <ReadField label="Profession" value={form.profession} placeholder="—" />
+            <Field label="Proof of Income">
+              <View style={styles.proofBox}>
+                <Text style={styles.proofText}>{form.proofOfIncome || '—'}</Text>
+              </View>
+            </Field>
+            <ReadField label="Profession ID" value={form.professionID} placeholder="—" />
+
+            {formDependents.length > 0 && (
+              <>
+                <Text style={styles.sectionHeading}>IV. Declaration of Dependents</Text>
+                {formDependents.map((dep: any, i: number) => (
+                  <View key={i} style={styles.depViewCard}>
+                    <Text style={styles.depViewName}>{dep.dependentName || `Dependent ${i + 1}`}</Text>
+                    <Text style={styles.depViewDetail}>{dep.dependentRelationship}{dep.dependentDOBYear ? ` · Born ${dep.dependentDOBYear}-${dep.dependentDOBMonth}-${dep.dependentDOBDay}` : ''}</Text>
+                    <Text style={styles.depViewDetail}>Citizenship: {dep.dependentCitizenship || '—'}</Text>
+                    {dep.permanentDisability === 'Yes' && (
+                      <View style={styles.disabilityBadge}>
+                        <Text style={styles.disabilityBadgeText}>With Permanent Disability</Text>
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </>
+            )}
+
+            <Text style={styles.sectionHeading}>IV. Member Type</Text>
+            <Text style={styles.subHeading}>Employment Information</Text>
+            <ReadField label="Profession ID" value={form.professionID} placeholder="—" />
+            <ReadField label="Member Type/Profession" value={getProfessionLabel(form.professionID)} placeholder="—" isDropdown />
 
             <View style={styles.confirmActions}>
               <TouchableOpacity style={styles.checkRow} onPress={() => setAgreeTerms(!agreeTerms)}>
@@ -689,11 +777,22 @@ const styles = StyleSheet.create({
   formTitle: { fontSize: 22, fontWeight: '800', color: '#111', lineHeight: 30, textAlign: 'center' },
   stepSubtitle: { fontSize: 13, color: '#888', textAlign: 'center', marginTop: 6 },
   progressTrackWrap: { paddingHorizontal: 20, paddingBottom: 8 },
+  stepDotsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  stepDotWrap: { flexDirection: 'row', alignItems: 'center' },
+  stepDotActive: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  stepDotActiveText: { fontSize: 12, color: '#fff', fontWeight: '700' },
+  stepDotInactive: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#e0e0e0', alignItems: 'center', justifyContent: 'center' },
+  stepDotInactiveText: { fontSize: 12, color: '#aaa', fontWeight: '600' },
+  stepConnector: { width: 40, height: 4, marginHorizontal: 2 },
+  stepConnectorFilled: { flex: 1, height: 4, borderRadius: 2 },
+  stepConnectorEmpty: { flex: 1, height: 4, borderRadius: 2, backgroundColor: '#e0e0e0' },
   progressTrack: { height: 6, backgroundColor: '#e0e0e0', borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: 6, backgroundColor: '#3aaa35', borderRadius: 3 },
   sectionBlock: { marginHorizontal: 16, marginTop: 16 },
   sectionLabel: { fontSize: 12, fontWeight: '700', color: '#555', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
   submittedCard: { backgroundColor: '#f9f9f9', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#eee' },
+  submittedCardAccent: { borderLeftWidth: 4, borderLeftColor: '#3aaa35' },
+  confirmPageTitle: { fontSize: 20, fontWeight: '800', color: '#111', textAlign: 'center', lineHeight: 28, marginBottom: 16 },
   submittedTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
   submittedPin: { fontSize: 15, fontWeight: '700', color: '#333' },
   submittedBtns: { flexDirection: 'row', gap: 6 },
@@ -751,6 +850,11 @@ const styles = StyleSheet.create({
   dependentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   dependentTitle: { fontSize: 14, fontWeight: '700', color: '#333' },
   depDetail: { fontSize: 12, color: '#777', marginTop: 2 },
+  depViewCard: { backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#e0e0e0', borderLeftWidth: 4, borderLeftColor: '#3aaa35' },
+  depViewName: { fontSize: 14, fontWeight: '700', color: '#222', marginBottom: 4 },
+  depViewDetail: { fontSize: 12, color: '#666', marginTop: 2, lineHeight: 17 },
+  disabilityBadge: { marginTop: 8, alignSelf: 'flex-start', backgroundColor: '#fff3e0', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#ffcc80' },
+  disabilityBadgeText: { fontSize: 11, color: '#e65100', fontWeight: '600' },
   removeText: { fontSize: 12, color: '#e53935', fontWeight: '500' },
   addDependentBtn: { backgroundColor: '#f4f4f4', borderRadius: 8, paddingVertical: 13, alignItems: 'center', marginBottom: 16, borderWidth: 1.5, borderColor: '#3aaa35', borderStyle: 'dashed' },
   addDependentText: { fontSize: 14, color: '#3aaa35', fontWeight: '600' },

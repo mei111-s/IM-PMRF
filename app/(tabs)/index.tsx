@@ -134,11 +134,11 @@ export default function LoginScreen() {
 
           <View style={styles.linksRow}>
             <TouchableOpacity><Text style={styles.linkText}>Forgot Password?</Text></TouchableOpacity>
-            <TouchableOpacity><Text style={styles.linkText}>Create New Account</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/form' as any)}><Text style={styles.linkText}>Create New Account</Text></TouchableOpacity>
           </View>
           <View style={styles.linksRow}>
             <TouchableOpacity><Text style={styles.linkText}>PhilHealth Check</Text></TouchableOpacity>
-            <TouchableOpacity><Text style={[styles.linkText, styles.linkGreen]}>PhilHealth Membership{'\n'}Application</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/form' as any)}><Text style={[styles.linkText, styles.linkGreen]}>PhilHealth Membership{'\n'}Application</Text></TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>

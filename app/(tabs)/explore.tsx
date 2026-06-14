@@ -183,23 +183,21 @@ export default function DashboardScreen() {
       </Modal>
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => setMenuOpen(true)}>
-            <Ionicons name="menu" size={26} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>PhilHealth</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/inbox' as any)}>
-            <Ionicons name="notifications-outline" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Welcome */}
+        {/* Header + Welcome merged into gradient */}
         <LinearGradient
           colors={['#2d8f2a', '#3aaa35', '#7dc142', '#c8e04a']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.welcomeSection}>
+          <View style={styles.headerInner}>
+            <TouchableOpacity onPress={() => setMenuOpen(true)}>
+              <Ionicons name="menu" size={26} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitleWhite}>PhilHealth</Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/inbox' as any)}>
+              <Ionicons name="notifications-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
           <Text style={styles.welcomeGreeting}>Mabuhay {firstName}{'\n'}{lastName}!</Text>
           <Text style={styles.welcomeSub}>Welcome to your PhilHealth Dashboard!</Text>
           <Text style={styles.locationText}>
@@ -403,8 +401,9 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 52, paddingBottom: 8, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
   headerTitle: { fontSize: 16, fontWeight: '700', color: '#333', letterSpacing: 0.5 },
-
-  welcomeSection: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
+  headerInner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 52, paddingBottom: 12 },
+  headerTitleWhite: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.5 },
+  welcomeSection: { paddingHorizontal: 20, paddingBottom: 20 },
   welcomeGreeting: { fontSize: 28, fontWeight: '800', color: '#fff', lineHeight: 34 },
   welcomeSub: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
   locationText: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
