@@ -189,6 +189,7 @@ export default function MembershipForm() {
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [pinModal, setPinModal] = useState<{ visible: boolean; pin: string }>({ visible: false, pin: '' });
 
   const [form, setForm] = useState({
     konSulTaProvider: '',
@@ -317,8 +318,7 @@ export default function MembershipForm() {
           }
         }
 
-        Alert.alert('Success', `Member registered with PIN: ${newPIN}`);
-        setSubmitted(true);
+        setPinModal({ visible: true, pin: newPIN });
       } else {
         Alert.alert('Error', memberRes.error || 'Failed to add member');
       }
@@ -333,6 +333,38 @@ export default function MembershipForm() {
   if (submitted) {
     return (
       <View style={styles.successContainer}>
+        {/* PIN Success Modal */}
+        <Modal visible={pinModal.visible} transparent animationType="fade" onRequestClose={() => {}}>
+          <View style={styles.pinOverlay}>
+            <View style={styles.pinCard}>
+              <LinearGradient
+                colors={['#3aaa35', '#7dc142', '#c8e04a']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.pinIconWrap}>
+                <Text style={styles.pinIconCheck}>✓</Text>
+              </LinearGradient>
+              <Text style={styles.pinCardTitle}>Registration Successful!</Text>
+              <Text style={styles.pinCardSubtitle}>Your PhilHealth Identification Number</Text>
+              <View style={styles.pinBadge}>
+                <Text style={styles.pinBadgeText}>{pinModal.pin}</Text>
+              </View>
+              <Text style={styles.pinCardNote}>Please save your PIN — you'll need it to access your membership records.</Text>
+              <LinearGradient
+                colors={['#3aaa35', '#7dc142', '#c8e04a']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.pinDoneBtn}>
+                <TouchableOpacity
+                  style={styles.pinDoneBtnInner}
+                  onPress={() => { setPinModal({ visible: false, pin: '' }); }}>
+                  <Text style={styles.pinDoneBtnText}>Got it</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </View>
+          </View>
+        </Modal>
+
         <View style={styles.successHeader}>
           <TouchableOpacity style={styles.navCircle} onPress={() => router.push('/(tabs)/explore')}>
             <Text style={styles.navArrow}>‹</Text>
@@ -943,4 +975,18 @@ const styles = StyleSheet.create({
   viewFormBtnGradient: { borderRadius: 8, paddingHorizontal: 40 },
   viewFormBtnInner: { paddingVertical: 13, alignItems: 'center' },
   viewFormBtnText: { fontSize: 14, color: '#fff', fontWeight: '700' },
+
+  // PIN success modal
+  pinOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 28 },
+  pinCard: { backgroundColor: '#fff', borderRadius: 20, padding: 28, width: '100%', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.18, shadowRadius: 24, elevation: 12 },
+  pinIconWrap: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
+  pinIconCheck: { fontSize: 36, color: '#fff', fontWeight: '800' },
+  pinCardTitle: { fontSize: 20, fontWeight: '800', color: '#111', marginBottom: 6, textAlign: 'center' },
+  pinCardSubtitle: { fontSize: 13, color: '#888', marginBottom: 16, textAlign: 'center' },
+  pinBadge: { backgroundColor: '#f0faf0', borderRadius: 12, borderWidth: 1.5, borderColor: '#3aaa35', paddingHorizontal: 24, paddingVertical: 14, marginBottom: 16, width: '100%', alignItems: 'center' },
+  pinBadgeText: { fontSize: 22, fontWeight: '800', color: '#2a8a26', letterSpacing: 2 },
+  pinCardNote: { fontSize: 12, color: '#aaa', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
+  pinDoneBtn: { borderRadius: 10, width: '100%' },
+  pinDoneBtnInner: { paddingVertical: 14, alignItems: 'center' },
+  pinDoneBtnText: { fontSize: 15, color: '#fff', fontWeight: '700' },
 });

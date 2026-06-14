@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { authStore } from '@/stores/auth-store';
 import { fetchMemberFull, updateMember, addDependent } from '@/stores/api';
 
@@ -276,16 +277,29 @@ export default function RevalidationScreen() {
     return (
       <View style={styles.outerContainer}>
         <PageHeader onBack={() => { setSubmitted(false); setScreen('default'); setStep(0); }} />
-        <View style={styles.titleSection}>
-          <Text style={styles.formTitle}>Update Existing{'\n'}Membership Form</Text>
-          <Text style={styles.stepSubtitle}>Membership form Updated!</Text>
-        </View>
-        <View style={styles.successCard}>
-          <View style={styles.successIconBox}><Text style={styles.successEmoji}>✅</Text></View>
-          <Text style={styles.successTitle}>Membership Form{'\n'}Successfully Updated and{'\n'}Resubmitted!</Text>
-          <TouchableOpacity style={styles.viewFormBtn} onPress={() => { setSubmitted(false); setScreen('view'); }}>
-            <Text style={styles.viewFormText}>View Form</Text>
-          </TouchableOpacity>
+
+        <LinearGradient
+          colors={['#3aaa35', '#7dc142', '#c8e04a']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.successHero}>
+          <View style={styles.successHeroCircle}>
+            <Text style={styles.successHeroCheck}>✓</Text>
+          </View>
+        </LinearGradient>
+
+        <View style={styles.successBody}>
+          <Text style={styles.successTitle}>Membership Application Form{'\n'}Successfully Updated!</Text>
+          <Text style={styles.successSubtitle}>You have successfully updated your{'\n'}membership form!</Text>
+          <LinearGradient
+            colors={['#3aaa35', '#7dc142', '#c8e04a']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.viewFormBtnGradient}>
+            <TouchableOpacity style={styles.viewFormBtnInner} onPress={() => { setSubmitted(false); setScreen('view'); }}>
+              <Text style={styles.viewFormBtnText}>View Form</Text>
+            </TouchableOpacity>
+          </LinearGradient>
         </View>
       </View>
     );
@@ -763,10 +777,13 @@ const styles = StyleSheet.create({
   cancelText: { fontSize: 13, color: '#555', fontWeight: '600' },
   submitBtn: { flex: 1.6, paddingVertical: 13, borderRadius: 8, backgroundColor: '#3aaa35', alignItems: 'center' },
   submitText: { fontSize: 12, color: '#fff', fontWeight: '700' },
-  successCard: { margin: 24, backgroundColor: '#f9f9f9', borderRadius: 16, padding: 32, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
-  successIconBox: { width: 100, height: 100, backgroundColor: '#e8f5e9', borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  successEmoji: { fontSize: 48 },
-  successTitle: { fontSize: 18, fontWeight: '700', color: '#111', textAlign: 'center', lineHeight: 26, marginBottom: 24 },
-  viewFormBtn: { paddingVertical: 12, paddingHorizontal: 40, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#ddd' },
-  viewFormText: { fontSize: 14, color: '#333', fontWeight: '600' },
+  successHero: { height: 220, alignItems: 'center', justifyContent: 'center' },
+  successHeroCircle: { width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.6)' },
+  successHeroCheck: { fontSize: 44, color: '#fff', fontWeight: '800' },
+  successBody: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  successTitle: { fontSize: 20, fontWeight: '800', color: '#111', textAlign: 'center', lineHeight: 28, marginBottom: 10 },
+  successSubtitle: { fontSize: 13, color: '#888', textAlign: 'center', lineHeight: 20, marginBottom: 28 },
+  viewFormBtnGradient: { borderRadius: 8, paddingHorizontal: 40 },
+  viewFormBtnInner: { paddingVertical: 13, alignItems: 'center' },
+  viewFormBtnText: { fontSize: 14, color: '#fff', fontWeight: '700' },
 });
