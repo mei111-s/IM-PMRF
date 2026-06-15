@@ -262,6 +262,14 @@ export default function MembershipForm() {
     return `${y}-${m}-${d}`;
   };
 
+  const memberTypeToProfessionID: Record<string, string> = {
+    'Employed Private': 'P001',
+    'Employed Government': 'P002',
+    'Self-Earning Individual': 'P003',
+    'Sole Proprietor': 'P004',
+    'Professional Practitioner': 'P005',
+  };
+
   const handleSubmit = async () => {
     if (isSubmittingRef.current) return; // hard block double tap
     if (!form.agreeTerms || !form.agreeConsent) {
@@ -295,7 +303,7 @@ export default function MembershipForm() {
         MonthlyIncome: form.monthlyIncome,
         Profession: form.profession,
         ProofOfIncome: form.proofOfIncomeType || form.proofOfIncome,
-        ProfessionID: form.professionID,
+        ProfessionID: memberTypeToProfessionID[form.memberType] || 'P001',
       };
 
       const memberRes = await addMember(memberData);
@@ -594,10 +602,6 @@ export default function MembershipForm() {
             <TouchableOpacity style={styles.addMoreBtn}>
               <Text style={styles.addMoreText}>+ Add More</Text>
             </TouchableOpacity>
-            <Field label="Profession ID">
-              <TextInput style={styles.input} placeholder="P001, P002, P003, P004, or P005" placeholderTextColor="#bbb"
-                value={form.professionID} onChangeText={v => update('professionID', v)} />
-            </Field>
 
             <View style={styles.bottomActions}>
               <View style={styles.actionBtnRow}>
@@ -713,10 +717,6 @@ export default function MembershipForm() {
           <View style={styles.formBody}>
             <Text style={styles.sectionHeading}>IV. Member Type</Text>
             <Text style={styles.subHeading}>Employment Information</Text>
-            <Field label="Profession ID">
-              <TextInput style={styles.input} placeholder="P001, P002, P003, P004, or P005" placeholderTextColor="#bbb"
-                value={form.professionID} onChangeText={v => update('professionID', v)} />
-            </Field>
             <SelectField
               label="Member Type/Profession"
               value={form.memberType}
@@ -802,7 +802,6 @@ export default function MembershipForm() {
             <TouchableOpacity style={styles.addMoreBtn}>
               <Text style={styles.addMoreText}>+ Add More</Text>
             </TouchableOpacity>
-            <ReviewField label="Profession ID" value={form.professionID} placeholder="P001, P002, P003, P004, or P005" />
 
             {dependents.length > 0 && (
               <>
@@ -840,7 +839,7 @@ export default function MembershipForm() {
 
             <Text style={styles.sectionHeading}>IV. Member Type</Text>
             <Text style={styles.subHeading}>Employment Information</Text>
-            <ReviewField label="Profession ID" value={form.professionID} placeholder="P001, P002, P003, P004, or P005" />
+            <ReviewField label="Profession ID" value={memberTypeToProfessionID[form.memberType] || '—'} placeholder="—" />
             <ReviewField label="Member Type/Profession" value={form.memberType} placeholder="Employed Private" isDropdown />
 
             <View style={styles.confirmActions}>
