@@ -1,7 +1,7 @@
 import { addMember } from '@/stores/api';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -186,10 +186,17 @@ function InlinePicker({ placeholder, value, options, onSelect }: { placeholder: 
 
 export default function MembershipForm() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
+  const isSubmittingRef = useRef(false);
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pinModal, setPinModal] = useState<{ visible: boolean; pin: string }>({ visible: false, pin: '' });
+
+  // Scroll to top whenever step changes so button positions don't bleed through
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [step]);
 
   const [form, setForm] = useState({
     konSulTaProvider: '',
@@ -221,11 +228,7 @@ export default function MembershipForm() {
     agreeConsent: false,
   });
 
-  const [dependents, setDependents] = useState<Dependent[]>([{
-    dependentName: '', dependentRelationship: 'Family',
-    dependentDOBYear: '', dependentDOBMonth: '', dependentDOBDay: '',
-    dependentCitizenship: '', permanentDisability: '',
-  }]);
+  const [dependents, setDependents] = useState<Dependent[]>([]);
 
   const update = (field: string, value: string | boolean) =>
     setForm(prev => ({ ...prev, [field]: value }));
@@ -251,11 +254,6 @@ export default function MembershipForm() {
     else router.push('/(tabs)/explore');
   };
 
-  const generatePIN = () => {
-    const random = Math.floor(1000 + Math.random() * 9000);
-    return `0010-0123-${random}`;
-  };
-
   const formatDate = (year: string, month: string, day: string) => {
     const y = year.padStart(4, '0');
     const m = month.padStart(2, '0');
@@ -264,18 +262,17 @@ export default function MembershipForm() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmittingRef.current) return; // hard block double tap
     if (!form.agreeTerms || !form.agreeConsent) {
       Alert.alert('Required', 'Please agree to the terms and consent.');
       return;
     }
 
+    isSubmittingRef.current = true;
     setSubmitting(true);
 
     try {
-      const newPIN = generatePIN();
-
       const memberData = {
-        PIN: newPIN,
         Purpose: 'Registration',
         KonSultaProvider: form.konSulTaProvider,
         MemberName: form.memberName,
@@ -304,6 +301,8 @@ export default function MembershipForm() {
       console.log('Member added:', memberRes);
 
       if (memberRes.success) {
+        const serverPIN = memberRes.pin; // use PIN assigned by server
+
         // Add dependents
         for (const dep of dependents) {
           if (dep.dependentName.trim()) {
@@ -314,11 +313,12 @@ export default function MembershipForm() {
               DependentCitizenship: dep.dependentCitizenship,
               DependentPermanentDisability: dep.permanentDisability,
             };
-            await addDependent(newPIN, depData);
+            await addDependent(serverPIN, depData);
           }
         }
 
-        setPinModal({ visible: true, pin: newPIN });
+        setPinModal({ visible: true, pin: serverPIN });
+        setSubmitted(true);
       } else {
         Alert.alert('Error', memberRes.error || 'Failed to add member');
       }
@@ -326,6 +326,7 @@ export default function MembershipForm() {
       console.error('Submit error:', err);
       Alert.alert('Error', 'Could not connect to server. Please try again.');
     } finally {
+      isSubmittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -411,7 +412,7 @@ export default function MembershipForm() {
     <View style={styles.outerContainer}>
       <PageHeader onBack={handleBack} onForward={step < 3 ? () => setStep(Math.min(step + 1, 3)) : undefined} />
 
-      <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} style={styles.scrollBody} showsVerticalScrollIndicator={false}>
         <View style={styles.titleSection}>
           <Text style={styles.formTitle}>New Membership{'\n'}Registration Form</Text>
           <Text style={styles.stepSubtitle}>
@@ -643,7 +644,10 @@ export default function MembershipForm() {
               </View>
             ))}
 
-            <TouchableOpacity style={styles.addDependentBtn} onPress={addDependent}>
+            <TouchableOpacity 
+              style={[styles.addDependentBtn, step !== 1 && { opacity: 0, pointerEvents: 'none' }]} 
+              onPress={() => { if (step === 1) addDependent(); }}
+              disabled={step !== 1}>
               <Text style={styles.addDependentText}>+ Add Dependent</Text>
             </TouchableOpacity>
 
@@ -693,7 +697,7 @@ export default function MembershipForm() {
                   end={{ x: 1, y: 0 }}
                   style={styles.continueBtnGradient}>
                   <TouchableOpacity style={styles.continueBtnInner} onPress={() => setStep(3)}>
-                    <Text style={styles.continueBtnText}>Submit Application Form</Text>
+                    <Text style={styles.continueBtnText}>Continue to Review</Text>
                   </TouchableOpacity>
                 </LinearGradient>
               </View>
