@@ -215,6 +215,7 @@ export default function MembershipForm() {
     sameAsPermanent: false,
     homePhoneNum: '',
     homePhoneNA: false,
+    businessDirectLineNA: false,
     mobileNum: '',
     businessDirectLine: '',
     emailAddress: '',
@@ -289,7 +290,7 @@ export default function MembershipForm() {
         MailingAddress: form.mailingAddress || 'SAME AS ABOVE',
         HomePhoneNum: form.homePhoneNA ? 'N/A' : (form.homePhoneNum || 'N/A'),
         MobileNum: form.mobileNum,
-        BusinessDirectLine: form.businessDirectLine || 'N/A',
+        BusinessDirectLine: form.businessDirectLineNA ? 'N/A' : (form.businessDirectLine || 'N/A'),
         EmailAddress: form.emailAddress,
         MonthlyIncome: form.monthlyIncome,
         Profession: form.profession,
@@ -456,11 +457,8 @@ export default function MembershipForm() {
               onChangeDay={v => update('dobDay', v)}
             />
             <Field label="Place of Birth">
-              <View style={styles.dropdownBox}>
-                <TextInput style={[styles.dropdownInput]} placeholder="City/Province" placeholderTextColor="#bbb"
-                  value={form.placeOfBirth} onChangeText={v => update('placeOfBirth', v)} />
-                <Text style={styles.dropdownCaret}>⌄</Text>
-              </View>
+              <TextInput style={styles.input} placeholder="City/Province" placeholderTextColor="#bbb"
+                value={form.placeOfBirth} onChangeText={v => update('placeOfBirth', v)} />
             </Field>
             <Field label="Sex">
               <View style={styles.toggleRow}>
@@ -479,13 +477,28 @@ export default function MembershipForm() {
               options={['Single', 'Married', 'Widowed', 'Legally Separated']}
               onSelect={v => update('civilStatus', v)}
             />
-            <SelectField
-              label="Citizenship"
-              value={form.citizenship}
-              placeholder="Select current Citizenship/Nationality"
-              options={['Filipino', 'Other']}
-              onSelect={v => update('citizenship', v)}
-            />
+            <Field label="Citizenship">
+              <View style={styles.toggleRow}>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, form.citizenship === 'Filipino' && styles.toggleBtnActive]}
+                  onPress={() => update('citizenship', 'Filipino')}>
+                  <Text style={[styles.toggleText, form.citizenship === 'Filipino' && styles.toggleTextActive]}>Filipino</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, form.citizenship !== 'Filipino' && form.citizenship !== '' && styles.toggleBtnActive]}
+                  onPress={() => update('citizenship', form.citizenship === 'Filipino' ? '' : form.citizenship)}>
+                  <Text style={[styles.toggleText, form.citizenship !== 'Filipino' && form.citizenship !== '' && styles.toggleTextActive]}>Other</Text>
+                </TouchableOpacity>
+              </View>
+              {form.citizenship !== 'Filipino' && (
+                <TextInput
+                  style={[styles.input, { marginTop: 8 }]}
+                  placeholder="Please specify your citizenship/nationality"
+                  placeholderTextColor="#bbb"
+                  value={form.citizenship}
+                  onChangeText={v => update('citizenship', v)} />
+              )}
+            </Field>
             <Field label="Philsys ID Number">
               <TextInput style={styles.input} placeholder="0000-0000-0000" placeholderTextColor="#bbb"
                 value={form.philSysIDNum} onChangeText={v => update('philSysIDNum', v)} />
@@ -534,8 +547,19 @@ export default function MembershipForm() {
                 value={form.mobileNum} onChangeText={v => update('mobileNum', v)} keyboardType="phone-pad" />
             </Field>
             <Field label="Business (Direct Line)">
-              <TextInput style={styles.input} placeholder="N/A if not applicable" placeholderTextColor="#bbb"
-                value={form.businessDirectLine} onChangeText={v => update('businessDirectLine', v)} />
+              <View style={styles.triRow}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }, form.businessDirectLineNA && styles.disabledBox]}
+                  placeholder="N/A if not applicable" placeholderTextColor="#bbb"
+                  value={form.businessDirectLineNA ? 'N/A' : form.businessDirectLine}
+                  onChangeText={v => update('businessDirectLine', v)}
+                  editable={!form.businessDirectLineNA} />
+                <TouchableOpacity
+                  style={[styles.naToggle, form.businessDirectLineNA && styles.naToggleActive]}
+                  onPress={() => update('businessDirectLineNA', !form.businessDirectLineNA)}>
+                  <Text style={[styles.naToggleText, form.businessDirectLineNA && styles.naToggleTextActive]}>N/A</Text>
+                </TouchableOpacity>
+              </View>
             </Field>
             <Field label="Email Address">
               <TextInput style={styles.input} placeholder="email@gmail.com" placeholderTextColor="#bbb"
@@ -623,13 +647,28 @@ export default function MembershipForm() {
                   onChangeMonth={v => updateDependent(index, 'dependentDOBMonth', v)}
                   onChangeDay={v => updateDependent(index, 'dependentDOBDay', v)}
                 />
-                <SelectField
-                  label="Citizenship"
-                  value={dep.dependentCitizenship}
-                  placeholder="Select current Citizenship/Nationality"
-                  options={['Filipino', 'Other']}
-                  onSelect={v => updateDependent(index, 'dependentCitizenship', v)}
-                />
+                <Field label="Citizenship">
+                  <View style={styles.toggleRow}>
+                    <TouchableOpacity
+                      style={[styles.toggleBtn, dep.dependentCitizenship === 'Filipino' && styles.toggleBtnActive]}
+                      onPress={() => updateDependent(index, 'dependentCitizenship', 'Filipino')}>
+                      <Text style={[styles.toggleText, dep.dependentCitizenship === 'Filipino' && styles.toggleTextActive]}>Filipino</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.toggleBtn, dep.dependentCitizenship !== 'Filipino' && dep.dependentCitizenship !== '' && styles.toggleBtnActive]}
+                      onPress={() => updateDependent(index, 'dependentCitizenship', dep.dependentCitizenship === 'Filipino' ? '' : dep.dependentCitizenship)}>
+                      <Text style={[styles.toggleText, dep.dependentCitizenship !== 'Filipino' && dep.dependentCitizenship !== '' && styles.toggleTextActive]}>Other</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {dep.dependentCitizenship !== 'Filipino' && (
+                    <TextInput
+                      style={[styles.input, { marginTop: 8 }]}
+                      placeholder="Please specify citizenship/nationality"
+                      placeholderTextColor="#bbb"
+                      value={dep.dependentCitizenship}
+                      onChangeText={v => updateDependent(index, 'dependentCitizenship', v)} />
+                  )}
+                </Field>
                 <Field label="Dependent with Permanent Disability?">
                   <View style={styles.toggleRow}>
                     {['Yes', 'No'].map(opt => (
